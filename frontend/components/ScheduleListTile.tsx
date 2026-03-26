@@ -1,0 +1,92 @@
+import React from 'react';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
+import Tile from './Tile';
+
+interface ScheduleItem {
+  time: string; // e.g., "9:00"
+  medications: { amount: string; name: string }[];
+}
+
+interface ScheduleListTileProps {
+  scheduleData: ScheduleItem[];
+}
+
+export default function ScheduleListTile({ scheduleData }: ScheduleListTileProps) {
+  const renderItem = ({ item }: { item: ScheduleItem }) => {
+    return (
+      <View style={styles.scheduleBlock}>
+        <Text style={styles.timeHeader}>{item.time}</Text>
+        <View style={styles.medList}>
+          {item.medications.map((med, index) => (
+            <View key={index} style={styles.medRow}>
+              <Text style={styles.medAmount}>{med.amount}</Text>
+              <Text style={styles.medName}>{med.name}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  return (
+    <Tile>
+      <View style={styles.header}>
+        <Text style={styles.title}>Prescription Routine</Text>
+      </View>
+      <FlatList
+        data={scheduleData}
+        keyExtractor={(item) => item.time}
+        renderItem={renderItem}
+        scrollEnabled={false} // Since this is inside a larger ScrollView, we disable scrolling for this internal FlatList to avoid nesting issues.
+        contentContainerStyle={{ paddingBottom: 10 }}
+      />
+    </Tile>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    paddingBottom: 10,
+    marginBottom: 15,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  scheduleBlock: {
+    marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50', // Highlight active rows
+  },
+  timeHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 10,
+  },
+  medList: {
+    paddingLeft: 5,
+  },
+  medRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  medAmount: {
+    color: '#dddddd',
+    fontSize: 16,
+    marginRight: 10,
+    width: 30, // Fixed width for alignment
+    textAlign: 'right',
+  },
+  medName: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+});
