@@ -1,0 +1,14 @@
+Flask==3.0.2
+Flask-Cors==4.0.0
+
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.7
+psycopg2-binary==2.9.9
+
+paho-mqtt==1.6.1
+
+firebase-admin==6.5.0
+APScheduler==3.10.4
+
+python-dotenv==1.0.1
+gunicorn==21.2.0
