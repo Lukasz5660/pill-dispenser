@@ -7,11 +7,16 @@ interface ScheduleTimelineTileProps {
 }
 
 export default function ScheduleTimelineTile({ scheduledHours }: ScheduleTimelineTileProps) {
-  // We represent 24 hours (0 to 24)
+  const minHour = scheduledHours.length > 0 ? Math.min(...scheduledHours) : 12;
+  const maxHour = scheduledHours.length > 0 ? Math.max(...scheduledHours) : 12;
+
+  const startHour = Math.max(0, minHour - 3);
+  const endHour = Math.min(24, maxHour + 3);
+  const span = Math.max(1, endHour - startHour);
+
   const renderDots = () => {
     return scheduledHours.map((hour) => {
-      // Calculate position percentage (hour / 24)
-      const leftPosition = `${(hour / 24) * 100}%`;
+      const leftPosition = `${((hour - startHour) / span) * 100}%`;
       return (
         <View key={hour} style={[styles.dotContainer, { left: leftPosition as any }]}>
           <View style={styles.dot} />
@@ -20,6 +25,8 @@ export default function ScheduleTimelineTile({ scheduledHours }: ScheduleTimelin
       );
     });
   };
+
+  const midHour = Math.round(startHour + span / 2);
 
   return (
     <Tile>
@@ -31,9 +38,9 @@ export default function ScheduleTimelineTile({ scheduledHours }: ScheduleTimelin
           {renderDots()}
         </View>
         <View style={styles.axisLabels}>
-          <Text style={styles.axisText}>0:00</Text>
-          <Text style={styles.axisText}>12:00</Text>
-          <Text style={styles.axisText}>24:00</Text>
+          <Text style={styles.axisText}>{`${startHour}:00`}</Text>
+          <Text style={styles.axisText}>{`${midHour}:00`}</Text>
+          <Text style={styles.axisText}>{`${endHour}:00`}</Text>
         </View>
       </View>
     </Tile>

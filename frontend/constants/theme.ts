@@ -25,6 +25,20 @@ export const Colors = {
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
   },
+  brand: {
+    gradientStart: '#1c1c1c',
+    gradientMiddle: '#3a3a3a',
+    gradientEnd: '#545454',
+    border: 'rgba(255, 255, 255, 0.2)',
+    glassBackground: 'rgba(255, 255, 255, 0.1)',
+    success: '#4CAF50',
+    warning: '#FFC107',
+    error: '#F44336',
+    white: '#ffffff',
+    whiteHalf: 'rgba(255, 255, 255, 0.5)',
+    whiteMuted: 'rgba(255, 255, 255, 0.8)',
+    textSecondary: '#dddddd',
+  }
 };
 
 export const Fonts = Platform.select({

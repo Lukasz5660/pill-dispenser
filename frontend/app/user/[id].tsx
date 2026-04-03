@@ -1,10 +1,11 @@
 import React from 'react';
-import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, TouchableOpacity, Text } from 'react-native';
+import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 
 import ScheduleTimelineTile from '../../components/ScheduleTimelineTile';
 import ScheduleListTile from '../../components/ScheduleListTile';
+import TopBar from '../../components/TopBar';
 
 // Mock data referencing the user's specific schedule
 const mockScheduleData = [
@@ -34,7 +35,6 @@ const mockScheduleData = [
 
 export default function UserSchedule() {
   const { id } = useLocalSearchParams();
-  const router = useRouter();
 
   // Extract just the hours for the visual timeline plot
   const scheduledHours = mockScheduleData.map(data => data.hour);
@@ -49,25 +49,13 @@ export default function UserSchedule() {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" />
         
-        {/* Custom Floating Back Navigation */}
-        <View style={styles.navHeader}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backPrefix}>{'<'}</Text>
-            <Text style={styles.backText}>Dashboard</Text>
-          </TouchableOpacity>
-        </View>
+        <TopBar title={`User ${id}`} />
 
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.content}>
-            <View style={styles.titleContainer}>
-              <Text style={styles.pageTitle}>User {id}&apos;s Schedule</Text>
-            </View>
 
             <ScheduleTimelineTile scheduledHours={scheduledHours} />
             <ScheduleListTile scheduleData={mockScheduleData} />
@@ -85,33 +73,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  navHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    zIndex: 10, // Ensure it sits above scrolling content if it were absolute
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  backPrefix: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  backText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+
   scrollContent: {
     flexGrow: 1,
   },

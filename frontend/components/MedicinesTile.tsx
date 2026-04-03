@@ -1,6 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import Tile from './Tile';
+import { GlobalStyles } from '../constants/GlobalStyles';
+import { Colors } from '../constants/theme';
 
 const mockMedicines = [
   { id: '1', name: 'Aspirin', remaining: 80 },
@@ -9,54 +13,51 @@ const mockMedicines = [
 ];
 
 export default function MedicinesTile() {
-  return (
-    <Tile>
-      <View style={styles.header}>
-        <Text style={styles.title}>Medicines</Text>
-      </View>
-      <View style={styles.content}>
-        {mockMedicines.map((med) => {
-          // Determine progress bar color based on remaining percentage
-          const barColor =
-            med.remaining > 50 ? '#4CAF50' : med.remaining > 20 ? '#FFC107' : '#F44336';
+  const router = useRouter();
 
-          return (
-            <View key={med.id} style={styles.medicineContainer}>
-              <View style={styles.medicineInfo}>
-                <Text style={styles.medicineName}>{med.name}</Text>
-                <Text style={styles.medicineRemaining}>{med.remaining}%</Text>
+  return (
+    <TouchableOpacity 
+      activeOpacity={0.8}
+      onPress={() => router.push('/medicines')}
+    >
+      <Tile>
+        <View style={GlobalStyles.tileHeader}>
+          <Text style={GlobalStyles.titleText}>Medicines</Text>
+          <Ionicons name="chevron-forward" size={20} color={Colors.brand.whiteHalf} />
+        </View>
+        <View style={styles.content}>
+          {mockMedicines.map((med) => {
+            // Determine progress bar color based on remaining percentage
+            const barColor =
+              med.remaining > 50 ? Colors.brand.success : med.remaining > 20 ? Colors.brand.warning : Colors.brand.error;
+
+            return (
+              <View key={med.id} style={styles.medicineContainer}>
+                <View style={[GlobalStyles.rowSpaceBetween, styles.medicineInfo]}>
+                  <Text style={GlobalStyles.bodyText}>{med.name}</Text>
+                  <Text style={GlobalStyles.secondaryText}>{med.remaining}%</Text>
+                </View>
+                <View style={styles.progressBarBackground}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        width: `${med.remaining}%`,
+                        backgroundColor: barColor,
+                      },
+                    ]}
+                  />
+                </View>
               </View>
-              <View style={styles.progressBarBackground}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      width: `${med.remaining}%`,
-                      backgroundColor: barColor,
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-          );
-        })}
-      </View>
-    </Tile>
+            );
+          })}
+        </View>
+      </Tile>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
-    paddingBottom: 10,
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
   content: {
     marginTop: 5,
   },
@@ -64,22 +65,11 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   medicineInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: 5,
-  },
-  medicineName: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  medicineRemaining: {
-    color: '#dddddd',
-    fontSize: 14,
   },
   progressBarBackground: {
     height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: Colors.brand.glassBackground,
     borderRadius: 4,
     overflow: 'hidden',
   },

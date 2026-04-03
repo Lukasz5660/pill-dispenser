@@ -1,0 +1,47 @@
+services:
+  # 1. The MQTT Broker (Mosquitto)
+  mqtt-broker:
+    image: eclipse-mosquitto:2.0
+    container_name: mqtt_broker
+    ports:
+      - "1883:1883" # Standard MQTT port
+      - "9001:9001" # WebSockets (useful for the Mobile App/Web UI)
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    restart: always
+
+  # 2. The Relational Database (PostgreSQL)
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: pill_dispenser_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  # 3. Your Python Backend
+  backend:
+    build: .
+    container_name: python_backend
+    depends_on:
+      - db
+      - mqtt-broker
+    environment:
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/pill_dispenser_db
+      - MQTT_BROKER_HOST=mqtt-broker
+      - MQTT_BROKER_PORT=1883
+    ports:
+      - "8000:8000" # If using FastAPI or Flask
+    volumes:
+      - .:/app
+    restart: always
+
+volumes:
+  postgres_data:
