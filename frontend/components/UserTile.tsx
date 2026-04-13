@@ -31,7 +31,10 @@ export default function UserTile() {
             <Text style={styles.userInitial}>{user.initial}</Text>
           </TouchableOpacity>
         ))}
-        <TouchableOpacity style={[styles.userAvatar, styles.addUserAvatar]}>
+        <TouchableOpacity
+          style={[styles.userAvatar, styles.addUserAvatar]}
+          onPress={() => router.push('/user/new/name')}
+        >
           <Text style={styles.addUserText}>+</Text>
         </TouchableOpacity>
       </ScrollView>

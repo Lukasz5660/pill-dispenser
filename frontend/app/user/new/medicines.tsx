@@ -1,0 +1,319 @@
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+
+import TopBar from '../../../components/TopBar';
+import { Colors } from '../../../constants/theme';
+import { GlobalStyles } from '../../../constants/GlobalStyles';
+
+const MOCK_MEDICINES = ['Aspirin', 'Vitamin C', 'Ibuprofen', 'Paracetamol', 'Melatonin'];
+
+type Assignment = {
+  medicine: string;
+  dosage: number;
+};
+
+export default function NewUserMedicinesScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{ name: string; times: string }>();
+  
+  const [timesArray, setTimesArray] = useState<string[]>([]);
+  const [assignments, setAssignments] = useState<Record<string, Assignment[]>>({});
+  const [activeMedicine, setActiveMedicine] = useState<Record<string, string>>({});
+  const [activeDosage, setActiveDosage] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (params.times) {
+      try {
+        const parsed = JSON.parse(params.times);
+        setTimesArray(parsed);
+      } catch (e) {
+        console.error("Failed to parse times", e);
+      }
+    }
+  }, [params.times]);
+
+  const handleAddAssignment = (time: string) => {
+    const med = activeMedicine[time];
+    const doseStr = activeDosage[time] || '';
+    const doseInt = parseInt(doseStr, 10);
+    
+    if (med && !isNaN(doseInt) && doseInt > 0) {
+      const currentList = assignments[time] || [];
+      setAssignments({
+        ...assignments,
+        [time]: [...currentList, { medicine: med, dosage: doseInt }]
+      });
+      // Reset inputs for this time
+      setActiveMedicine({ ...activeMedicine, [time]: '' });
+      setActiveDosage({ ...activeDosage, [time]: '' });
+    }
+  };
+
+  const removeAssignment = (time: string, index: number) => {
+    const currentList = assignments[time] || [];
+    const newList = [...currentList];
+    newList.splice(index, 1);
+    setAssignments({
+      ...assignments,
+      [time]: newList
+    });
+  };
+
+  const handleComplete = () => {
+    // In a real app we'd save this data along with the name and times
+    router.replace('/');
+  };
+
+  return (
+    <LinearGradient
+      colors={[Colors.brand.gradientStart, Colors.brand.gradientMiddle, Colors.brand.gradientEnd]}
+      style={styles.container}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <TopBar title={"Medicines for " + (params.name || 'User')} />
+        
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Text style={styles.headerLabel}>Assign Medicines to Schedule</Text>
+
+            {timesArray.map((time) => (
+              <View key={time} style={styles.timeBlock}>
+                <View style={styles.timeHeader}>
+                  <Ionicons name="time-outline" size={24} color={Colors.brand.white} />
+                  <Text style={styles.timeHeaderText}>{time}</Text>
+                </View>
+
+                {/* Existing Assignments list */}
+                {(assignments[time] || []).map((item, index) => (
+                  <View key={index} style={styles.assignmentRow}>
+                    <View style={styles.assignmentInfo}>
+                      <Text style={styles.assignmentDosage}>{item.dosage}</Text>
+                      <Text style={styles.assignmentMedicine}>{item.medicine}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => removeAssignment(time, index)} style={styles.deleteButton}>
+                      <Ionicons name="trash-outline" size={20} color={Colors.brand.error} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+
+                {/* Inline form to add new assignment */}
+                <View style={styles.addForm}>
+                  <Text style={styles.subLabel}>Select Medicine:</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.medicineSelector}>
+                    {MOCK_MEDICINES.map((med) => {
+                      const isSelected = activeMedicine[time] === med;
+                      return (
+                        <TouchableOpacity
+                          key={med}
+                          style={[styles.medicineChip, isSelected && styles.medicineChipActive]}
+                          onPress={() => setActiveMedicine({ ...activeMedicine, [time]: med })}
+                        >
+                          <Text style={[styles.medicineChipText, isSelected && styles.medicineChipTextActive]}>
+                            {med}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                  
+                  <View style={styles.dosageRow}>
+                    <TextInput
+                      style={styles.dosageInput}
+                      placeholder="Dosage (e.g., 1)"
+                      placeholderTextColor={Colors.brand.whiteMuted}
+                      value={activeDosage[time] || ''}
+                      onChangeText={(val) => {
+                        // Only allow numbers
+                        const numericVal = val.replace(/[^0-9]/g, '');
+                        setActiveDosage({ ...activeDosage, [time]: numericVal });
+                      }}
+                      keyboardType="numeric"
+                    />
+                    <TouchableOpacity
+                      style={[
+                        styles.addButton,
+                        (!activeMedicine[time] || !(activeDosage[time] || '').trim()) && styles.addButtonDisabled
+                      ]}
+                      onPress={() => handleAddAssignment(time)}
+                      disabled={!activeMedicine[time] || !(activeDosage[time] || '').trim()}
+                    >
+                      <Text style={styles.addButtonText}>Add</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            ))}
+            
+            <View style={{ height: 40 }} />
+          </ScrollView>
+
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
+              <Text style={styles.completeButtonText}>Finish Setup</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  headerLabel: {
+    fontSize: 20,
+    color: Colors.brand.whiteMuted,
+    marginBottom: 20,
+  },
+  timeBlock: {
+    backgroundColor: Colors.brand.glassBackground,
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.brand.border,
+  },
+  timeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.brand.border,
+    paddingBottom: 10,
+  },
+  timeHeaderText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: Colors.brand.white,
+    marginLeft: 10,
+  },
+  assignmentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  assignmentInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  assignmentDosage: {
+    color: Colors.brand.success,
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginRight: 10,
+    minWidth: 50,
+  },
+  assignmentMedicine: {
+    color: Colors.brand.white,
+    fontSize: 16,
+  },
+  deleteButton: {
+    padding: 5,
+  },
+  addForm: {
+    marginTop: 10,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+  },
+  subLabel: {
+    color: Colors.brand.whiteMuted,
+    marginBottom: 10,
+    fontSize: 14,
+  },
+  medicineSelector: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  medicineChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  medicineChipActive: {
+    backgroundColor: Colors.brand.white,
+    borderColor: Colors.brand.white,
+  },
+  medicineChipText: {
+    color: Colors.brand.white,
+    fontWeight: '600',
+  },
+  medicineChipTextActive: {
+    color: Colors.brand.gradientEnd,
+  },
+  dosageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dosageInput: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 10,
+    padding: 12,
+    color: Colors.brand.white,
+    fontSize: 16,
+    marginRight: 10,
+  },
+  addButton: {
+    backgroundColor: Colors.brand.success,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addButtonDisabled: {
+    opacity: 0.5,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  addButtonText: {
+    color: Colors.brand.white,
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  footer: {
+    padding: 20,
+    paddingBottom: Platform.OS === 'ios' ? 0 : 20,
+  },
+  completeButton: {
+    backgroundColor: Colors.brand.white,
+    padding: 18,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  completeButtonText: {
+    color: Colors.brand.gradientEnd,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+});
