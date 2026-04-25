@@ -6,125 +6,159 @@ from typing import List, Optional
 
 db = SQLAlchemy()
 
-# 1. Device Models
 class DeviceModel(db.Model):
-    __tablename__ = 'device_models'
-    model_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    model_name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    __tablename__ = "device_models"
+
+    model_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    model_name: Mapped[str] = mapped_column(String(50), nullable=False)
     chamber_number: Mapped[int] = mapped_column(Integer, nullable=False)
 
+    # Relationships
     devices: Mapped[List["Device"]] = relationship(back_populates="model")
 
-# 2. Accounts
 class Account(db.Model):
-    __tablename__ = 'accounts'
-    account_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    account_name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    __tablename__ = "accounts"
+
+    account_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    account_name: Mapped[str] = mapped_column(String(50), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(256), nullable=False)
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
 
-    users: Mapped[List["User"]] = relationship(back_populates="account")
+    # Relationships
     devices: Mapped[List["Device"]] = relationship(back_populates="account")
+    users: Mapped[List["User"]] = relationship(back_populates="account")
     medications: Mapped[List["Medication"]] = relationship(back_populates="account")
-    tokens: Mapped[List["NotificationToken"]] = relationship(back_populates="account")
+    notification_tokens: Mapped[List["NotificationToken"]] = relationship(back_populates="account")
 
-# 3. Devices
 class Device(db.Model):
-    __tablename__ = 'devices'
-    device_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    hardware_serial: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    model_id: Mapped[int] = mapped_column(ForeignKey('device_models.model_id'))
-    account_id: Mapped[int] = mapped_column(ForeignKey('accounts.account_id'))
-    last_heartbeat: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True))
+    __tablename__ = "devices"
 
+    device_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    hardware_serial: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    model_id: Mapped[int] = mapped_column(ForeignKey("device_models.model_id"), nullable=False)
+    last_heartbeat: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.account_id"), nullable=False)
+
+    # Relationships
     model: Mapped["DeviceModel"] = relationship(back_populates="devices")
     account: Mapped["Account"] = relationship(back_populates="devices")
+    chambers: Mapped[List["Chamber"]] = relationship(back_populates="device")
 
-# 4. Users
 class User(db.Model):
-    __tablename__ = 'users'
-    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    username: Mapped[str] = mapped_column(String(50), nullable=False) # Not unique
-    account_id: Mapped[int] = mapped_column(ForeignKey('accounts.account_id'))
+    __tablename__ = "users"
 
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(50), nullable=False)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.account_id"), nullable=False)
+
+    # Relationships
     account: Mapped["Account"] = relationship(back_populates="users")
     schedules: Mapped[List["Schedule"]] = relationship(back_populates="user")
     dispense_times: Mapped[List["DispenseTime"]] = relationship(back_populates="user")
 
-# 5. Medications
 class Medication(db.Model):
-    __tablename__ = 'medications'
-    medication_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    account_id: Mapped[int] = mapped_column(ForeignKey('accounts.account_id'))
+    __tablename__ = "medications"
+
+    medication_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.account_id"), nullable=False)
     med_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    total_stock: Mapped[int] = mapped_column(Integer, default=0)
-    chamber: Mapped[Optional[int]] = mapped_column(Integer)
 
+    # Relationships
     account: Mapped["Account"] = relationship(back_populates="medications")
-    
-    __table_args__ = (
-        UniqueConstraint('account_id', 'med_name', name='uq_med_account_name'),
-        Index('idx_med_account', 'account_id'), # Manual index for faster lookups
-    )
+    schedules: Mapped[List["Schedule"]] = relationship(back_populates="medication")
+    chambers: Mapped[List["MedicationChamber"]] = relationship(back_populates="medication")
 
-# 6. Schedules
 class Schedule(db.Model):
-    __tablename__ = 'schedules'
-    schedule_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    medication_id: Mapped[int] = mapped_column(ForeignKey('medications.medication_id'))
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.user_id'))
-    start_date: Mapped[date] = mapped_column(Date, nullable=False)
-    end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    __tablename__ = "schedules"
 
+    schedule_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    medication_id: Mapped[int] = mapped_column(ForeignKey("medications.medication_id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"), nullable=False)
+    start_time: Mapped[date] = mapped_column(Date, nullable=False)
+    end_time: Mapped[date] = mapped_column(Date, nullable=False)
+
+    # Relationships
     user: Mapped["User"] = relationship(back_populates="schedules")
+    medication: Mapped["Medication"] = relationship(back_populates="schedules")
+    dts_entries: Mapped[List["DispenseTimeSchedule"]] = relationship(back_populates="schedule")
 
-# 7. Dispense Times
 class DispenseTime(db.Model):
-    __tablename__ = 'dispense_times'
-    dispense_time_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.user_id'))
-    time_of_day: Mapped[time] = mapped_column(Time, nullable=False)
+    __tablename__ = "dispense_times"
 
+    dispense_time_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"), nullable=False)
+    time: Mapped[time] = mapped_column(Time, nullable=False)
+
+    # Relationships
     user: Mapped["User"] = relationship(back_populates="dispense_times")
-    
-    __table_args__ = (
-        UniqueConstraint('user_id', 'time_of_day', name='uq_user_time'),
-    )
+    dts_entries: Mapped[List["DispenseTimeSchedule"]] = relationship(back_populates="dispense_time")
+    notification_logs: Mapped[List["NotificationLog"]] = relationship(back_populates="dispense_time")
 
-# 8. Dispense Times Schedules (Linker)
-class DispenseTimesSchedule(db.Model):
-    __tablename__ = 'dispense_times_schedules'
-    dts_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    schedule_id: Mapped[int] = mapped_column(ForeignKey('schedules.schedule_id'))
-    dispense_time_id: Mapped[int] = mapped_column(ForeignKey('dispense_times.dispense_time_id'))
+class DispenseTimeSchedule(db.Model):
+    __tablename__ = "dispense_times_schedules"
+
+    dts_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    schedule_id: Mapped[int] = mapped_column(ForeignKey("schedules.schedule_id"), nullable=False)
+    dispense_time_id: Mapped[int] = mapped_column(ForeignKey("dispense_times.dispense_time_id"), nullable=False)
     dosage: Mapped[int] = mapped_column(Integer, nullable=False)
 
-# 9. Dispense Logs
-class DispenseLog(db.Model):
-    __tablename__ = 'dispense_logs'
-    log_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    dts_id: Mapped[int] = mapped_column(ForeignKey('dispense_times_schedules.dts_id'))
-    actual_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
-    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    # Relationships
+    schedule: Mapped["Schedule"] = relationship(back_populates="dts_entries")
+    dispense_time: Mapped["DispenseTime"] = relationship(back_populates="dts_entries")
+    dispense_logs: Mapped[List["DispenseLog"]] = relationship(back_populates="dts")
 
-    __table_args__ = (
-        Index('idx_log_dts', 'dts_id'), # Manual index for FK
-    )
+class Chamber(db.Model):
+    __tablename__ = "chambers"
 
-# 10. Notification Tokens
+    chamber_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    device_id: Mapped[int] = mapped_column(ForeignKey("devices.device_id"), nullable=False)
+    chamber_number: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    # Relationships
+    device: Mapped["Device"] = relationship(back_populates="chambers")
+    medication_links: Mapped[List["MedicationChamber"]] = relationship(back_populates="chamber")
+
+class MedicationChamber(db.Model):
+    __tablename__ = "medications_chambers"
+
+    mc_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chamber_id: Mapped[int] = mapped_column(ForeignKey("chambers.chamber_id"), nullable=False)
+    medication_id: Mapped[int] = mapped_column(ForeignKey("medications.medication_id"), nullable=False)
+    stock: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Relationships
+    chamber: Mapped["Chamber"] = relationship(back_populates="medication_links")
+    medication: Mapped["Medication"] = relationship(back_populates="chambers")
+
 class NotificationToken(db.Model):
-    __tablename__ = 'notification_tokens'
-    token_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    account_id: Mapped[int] = mapped_column(ForeignKey('accounts.account_id'))
-    token: Mapped[str] = mapped_column(String(256), unique=True, nullable=False)
+    __tablename__ = "notification_tokens"
+
+    token_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.account_id"), nullable=False)
+    token: Mapped[str] = mapped_column(String(256), nullable=False)
     device_name: Mapped[Optional[str]] = mapped_column(String(50))
 
-    account: Mapped["Account"] = relationship(back_populates="tokens")
+    # Relationships
+    account: Mapped["Account"] = relationship(back_populates="notification_tokens")
 
-# 11. Notification Logs
 class NotificationLog(db.Model):
-    __tablename__ = 'notification_logs'
-    not_log_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    dispense_time_id: Mapped[int] = mapped_column(ForeignKey('dispense_times.dispense_time_id'))
-    actual_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
-    status: Mapped[str] = mapped_column(String(20))
+    __tablename__ = "notification_logs"
+
+    not_log_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    dispense_time_id: Mapped[int] = mapped_column(ForeignKey("dispense_times.dispense_time_id"), nullable=False)
+    actual_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    status: Mapped[Optional[str]] = mapped_column(String(20))
+
+    # Relationships
+    dispense_time: Mapped["DispenseTime"] = relationship(back_populates="notification_logs")
+
+class DispenseLog(db.Model):
+    __tablename__ = "dispense_logs"
+
+    log_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    dts_id: Mapped[int] = mapped_column(ForeignKey("dispense_times_schedules.dts_id"), nullable=False)
+    actual_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    status: Mapped[Optional[str]] = mapped_column(String(20))
+
+    # Relationships
+    dts: Mapped["DispenseTimeSchedule"] = relationship(back_populates="dispense_logs")

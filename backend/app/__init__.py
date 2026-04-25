@@ -7,5 +7,6 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     db.init_app(app)
     with app.app_context():
+        db.drop_all()
         db.create_all()
     return app
