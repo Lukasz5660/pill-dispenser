@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import Tile from './Tile';
+import { useTheme } from '../context/ThemeContext';
 
 interface ScheduleItem {
   time: string; // e.g., "9:00"
@@ -12,6 +13,9 @@ interface ScheduleListTileProps {
 }
 
 export default function ScheduleListTile({ scheduleData }: ScheduleListTileProps) {
+  const { brandColors } = useTheme();
+  const styles = useMemo(() => getStyles(brandColors), [brandColors]);
+
   const renderItem = ({ item }: { item: ScheduleItem }) => {
     return (
       <View style={styles.scheduleBlock}>
@@ -44,30 +48,30 @@ export default function ScheduleListTile({ scheduleData }: ScheduleListTileProps
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (brandColors: any) => StyleSheet.create({
   header: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    borderBottomColor: brandColors.border,
     paddingBottom: 10,
     marginBottom: 15,
   },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#ffffff',
+    color: brandColors.white,
   },
   scheduleBlock: {
     marginBottom: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: brandColors.glassBackground,
     borderRadius: 12,
     padding: 15,
     borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50', // Highlight active rows
+    borderLeftColor: brandColors.success, // Highlight active rows
   },
   timeHeader: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: brandColors.white,
     marginBottom: 10,
   },
   medList: {
@@ -78,14 +82,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   medAmount: {
-    color: '#dddddd',
+    color: brandColors.whiteMuted,
     fontSize: 16,
     marginRight: 10,
     width: 30, // Fixed width for alignment
     textAlign: 'right',
   },
   medName: {
-    color: '#ffffff',
+    color: brandColors.white,
     fontSize: 16,
     fontWeight: '500',
   },

@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Tile from './Tile';
+import { useTheme } from '../context/ThemeContext';
 
 interface ScheduleTimelineTileProps {
   scheduledHours: number[]; // e.g., [9, 14, 20]
 }
 
 export default function ScheduleTimelineTile({ scheduledHours }: ScheduleTimelineTileProps) {
+  const { brandColors } = useTheme();
+  const styles = useMemo(() => getStyles(brandColors), [brandColors]);
+
   const minHour = scheduledHours.length > 0 ? Math.min(...scheduledHours) : 12;
   const maxHour = scheduledHours.length > 0 ? Math.max(...scheduledHours) : 12;
 
@@ -47,17 +51,17 @@ export default function ScheduleTimelineTile({ scheduledHours }: ScheduleTimelin
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (brandColors: any) => StyleSheet.create({
   header: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    borderBottomColor: brandColors.border,
     paddingBottom: 10,
     marginBottom: 20, // Extra margin for the timeline rendering
   },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#ffffff',
+    color: brandColors.white,
   },
   timelineWrapper: {
     paddingVertical: 10,
@@ -82,12 +86,12 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#4CAF50', // Green dot for active time
+    backgroundColor: brandColors.success, // Green dot for active time
     borderWidth: 2,
-    borderColor: '#1e1e1e', // Matches the dark grey background slightly
+    borderColor: brandColors.glassBackground, // Matches the dark grey background slightly
   },
   timeLabel: {
-    color: '#ffffff',
+    color: brandColors.white,
     fontSize: 10,
     position: 'absolute',
     top: -20,
@@ -100,7 +104,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   axisText: {
-    color: '#888888',
+    color: brandColors.whiteMuted,
     fontSize: 12,
   },
 });
