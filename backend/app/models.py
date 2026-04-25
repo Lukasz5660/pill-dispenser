@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Integer, String, TIMESTAMP, Time, Date, ForeignKey, UniqueConstraint, Index
+from sqlalchemy import Integer, String, TIMESTAMP, Time, Date, ForeignKey, UniqueConstraint, Index, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, time, date
 from typing import List, Optional
