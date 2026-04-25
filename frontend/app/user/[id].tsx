@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
@@ -6,6 +6,7 @@ import { useLocalSearchParams } from 'expo-router';
 import ScheduleTimelineTile from '../../components/ScheduleTimelineTile';
 import ScheduleListTile from '../../components/ScheduleListTile';
 import TopBar from '../../components/TopBar';
+import { useTheme } from '../../context/ThemeContext';
 
 // Mock data referencing the user's specific schedule
 const mockScheduleData = [
@@ -35,13 +36,15 @@ const mockScheduleData = [
 
 export default function UserSchedule() {
   const { id } = useLocalSearchParams();
+  const { brandColors } = useTheme();
+  const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
   // Extract just the hours for the visual timeline plot
   const scheduledHours = mockScheduleData.map(data => data.hour);
 
   return (
     <LinearGradient
-      colors={['#1c1c1c', '#3a3a3a', '#545454']}
+      colors={[brandColors.gradientStart, brandColors.gradientMiddle, brandColors.gradientEnd]}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -66,14 +69,13 @@ export default function UserSchedule() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (brandColors: any) => StyleSheet.create({
   container: {
     flex: 1,
   },
   safeArea: {
     flex: 1,
   },
-
   scrollContent: {
     flexGrow: 1,
   },
@@ -89,6 +91,6 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: brandColors.white,
   },
 });

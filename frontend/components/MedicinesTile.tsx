@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Tile from './Tile';
-import { GlobalStyles } from '../constants/GlobalStyles';
-import { Colors } from '../constants/theme';
+import { useGlobalStyles } from '../constants/GlobalStyles';
+import { useTheme } from '../context/ThemeContext';
 
 const mockMedicines = [
   { id: '1', name: 'Aspirin', remaining: 80 },
@@ -14,6 +14,9 @@ const mockMedicines = [
 
 export default function MedicinesTile() {
   const router = useRouter();
+  const { brandColors } = useTheme();
+  const globalStyles = useGlobalStyles();
+  const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
   return (
     <TouchableOpacity 
@@ -21,21 +24,21 @@ export default function MedicinesTile() {
       onPress={() => router.push('/medicines')}
     >
       <Tile>
-        <View style={GlobalStyles.tileHeader}>
-          <Text style={GlobalStyles.titleText}>Medicines</Text>
-          <Ionicons name="chevron-forward" size={20} color={Colors.brand.whiteHalf} />
+        <View style={globalStyles.tileHeader}>
+          <Text style={globalStyles.titleText}>Medicines</Text>
+          <Ionicons name="chevron-forward" size={20} color={brandColors.whiteHalf} />
         </View>
         <View style={styles.content}>
           {mockMedicines.map((med) => {
             // Determine progress bar color based on remaining percentage
             const barColor =
-              med.remaining > 50 ? Colors.brand.success : med.remaining > 20 ? Colors.brand.warning : Colors.brand.error;
+              med.remaining > 50 ? brandColors.success : med.remaining > 20 ? brandColors.warning : brandColors.error;
 
             return (
               <View key={med.id} style={styles.medicineContainer}>
-                <View style={[GlobalStyles.rowSpaceBetween, styles.medicineInfo]}>
-                  <Text style={GlobalStyles.bodyText}>{med.name}</Text>
-                  <Text style={GlobalStyles.secondaryText}>{med.remaining}%</Text>
+                <View style={[globalStyles.rowSpaceBetween, styles.medicineInfo]}>
+                  <Text style={globalStyles.bodyText}>{med.name}</Text>
+                  <Text style={globalStyles.secondaryText}>{med.remaining}%</Text>
                 </View>
                 <View style={styles.progressBarBackground}>
                   <View
@@ -57,7 +60,7 @@ export default function MedicinesTile() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (brandColors: any) => StyleSheet.create({
   content: {
     marginTop: 5,
   },
@@ -69,7 +72,7 @@ const styles = StyleSheet.create({
   },
   progressBarBackground: {
     height: 8,
-    backgroundColor: Colors.brand.glassBackground,
+    backgroundColor: brandColors.glassBackground,
     borderRadius: 4,
     overflow: 'hidden',
   },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,8 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import TopBar from '../../../components/TopBar';
-import { Colors } from '../../../constants/theme';
-import { GlobalStyles } from '../../../constants/GlobalStyles';
+import { useGlobalStyles } from '../../../constants/GlobalStyles';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function NewUserScheduleScreen() {
   const router = useRouter();
@@ -16,6 +16,10 @@ export default function NewUserScheduleScreen() {
   const [times, setTimes] = useState<string[]>(['08:00', '14:00', '20:00']);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTime, setPickerTime] = useState(new Date());
+
+  const { brandColors } = useTheme();
+  const globalStyles = useGlobalStyles();
+  const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
   const handleAddTime = () => {
     setShowPicker(true);
@@ -56,14 +60,14 @@ export default function NewUserScheduleScreen() {
 
   const handleComplete = () => {
     router.push({
-      pathname: '/user/new/medicines',
+      pathname: '/user/new/select-medicines',
       params: { name: name || '', times: JSON.stringify(times) }
     });
   };
 
   return (
     <LinearGradient
-      colors={[Colors.brand.gradientStart, Colors.brand.gradientMiddle, Colors.brand.gradientEnd]}
+      colors={[brandColors.gradientStart, brandColors.gradientMiddle, brandColors.gradientEnd]}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -79,13 +83,13 @@ export default function NewUserScheduleScreen() {
               <View key={index} style={styles.timeRow}>
                 <Text style={styles.timeText}>{time}</Text>
                 <TouchableOpacity onPress={() => removeTime(time)} style={styles.deleteButton}>
-                  <Ionicons name="trash-outline" size={24} color={Colors.brand.error} />
+                  <Ionicons name="trash-outline" size={24} color={brandColors.error} />
                 </TouchableOpacity>
               </View>
             ))}
             
             <TouchableOpacity style={styles.addButton} onPress={handleAddTime}>
-              <Ionicons name="add-circle-outline" size={24} color={Colors.brand.white} />
+              <Ionicons name="add-circle-outline" size={24} color={brandColors.white} />
               <Text style={styles.addText}>Add Time</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -112,7 +116,7 @@ export default function NewUserScheduleScreen() {
               mode="time"
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               onChange={handlePickerChange}
-              textColor={Platform.OS === 'ios' ? Colors.brand.white : undefined}
+              textColor={Platform.OS === 'ios' ? brandColors.white : undefined}
             />
           </View>
         )}
@@ -121,7 +125,7 @@ export default function NewUserScheduleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (brandColors: any) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -135,7 +139,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 20,
-    color: Colors.brand.whiteMuted,
+    color: brandColors.whiteMuted,
     marginBottom: 20,
   },
   listContainer: {
@@ -145,15 +149,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.brand.glassBackground,
+    backgroundColor: brandColors.glassBackground,
     padding: 15,
     borderRadius: 12,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: Colors.brand.border,
+    borderColor: brandColors.border,
   },
   timeText: {
-    color: Colors.brand.white,
+    color: brandColors.white,
     fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -168,36 +172,36 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.brand.whiteHalf,
+    borderColor: brandColors.whiteHalf,
     borderStyle: 'dashed',
     marginTop: 10,
     gap: 8,
   },
   addText: {
-    color: Colors.brand.white,
+    color: brandColors.white,
     fontSize: 16,
     fontWeight: '600',
   },
   completeButton: {
-    backgroundColor: Colors.brand.white,
+    backgroundColor: brandColors.white,
     padding: 18,
     borderRadius: 30,
     alignItems: 'center',
     marginTop: 20,
   },
   completeButtonText: {
-    color: Colors.brand.gradientEnd,
+    color: brandColors.gradientEnd,
     fontSize: 18,
     fontWeight: 'bold',
   },
   pickerContainer: {
-    backgroundColor: Colors.brand.gradientStart,
+    backgroundColor: brandColors.gradientStart,
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     borderTopWidth: 1,
-    borderColor: Colors.brand.border,
+    borderColor: brandColors.border,
     paddingBottom: 30,
   },
   pickerHeader: {
@@ -205,14 +209,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.brand.border,
+    borderBottomColor: brandColors.border,
   },
   pickerCancel: {
-    color: Colors.brand.error,
+    color: brandColors.error,
     fontSize: 16,
   },
   pickerDone: {
-    color: Colors.brand.success,
+    color: brandColors.success,
     fontSize: 16,
     fontWeight: 'bold',
   },

@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import TopBar from '../../../components/TopBar';
-import { Colors } from '../../../constants/theme';
-import { GlobalStyles } from '../../../constants/GlobalStyles';
+import { useGlobalStyles } from '../../../constants/GlobalStyles';
+import { useTheme } from '../../../context/ThemeContext';
 
 const MOCK_MEDICINES = ['Aspirin', 'Vitamin C', 'Ibuprofen', 'Paracetamol', 'Melatonin'];
 
@@ -17,12 +17,17 @@ type Assignment = {
 
 export default function NewUserMedicinesScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ name: string; times: string }>();
+  const params = useLocalSearchParams<{ name: string; times: string; selectedMedicines?: string }>();
   
   const [timesArray, setTimesArray] = useState<string[]>([]);
+  const [availableMedicines, setAvailableMedicines] = useState<string[]>(MOCK_MEDICINES);
   const [assignments, setAssignments] = useState<Record<string, Assignment[]>>({});
   const [activeMedicine, setActiveMedicine] = useState<Record<string, string>>({});
   const [activeDosage, setActiveDosage] = useState<Record<string, string>>({});
+
+  const { brandColors } = useTheme();
+  const globalStyles = useGlobalStyles();
+  const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
   useEffect(() => {
     if (params.times) {
@@ -33,7 +38,16 @@ export default function NewUserMedicinesScreen() {
         console.error("Failed to parse times", e);
       }
     }
-  }, [params.times]);
+    
+    if (params.selectedMedicines) {
+      try {
+        const parsed = JSON.parse(params.selectedMedicines);
+        setAvailableMedicines(parsed.map((item: any) => item.name));
+      } catch (e) {
+        console.error("Failed to parse selectedMedicines", e);
+      }
+    }
+  }, [params.times, params.selectedMedicines]);
 
   const handleAddAssignment = (time: string) => {
     const med = activeMedicine[time];
@@ -69,7 +83,7 @@ export default function NewUserMedicinesScreen() {
 
   return (
     <LinearGradient
-      colors={[Colors.brand.gradientStart, Colors.brand.gradientMiddle, Colors.brand.gradientEnd]}
+      colors={[brandColors.gradientStart, brandColors.gradientMiddle, brandColors.gradientEnd]}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -87,7 +101,7 @@ export default function NewUserMedicinesScreen() {
             {timesArray.map((time) => (
               <View key={time} style={styles.timeBlock}>
                 <View style={styles.timeHeader}>
-                  <Ionicons name="time-outline" size={24} color={Colors.brand.white} />
+                  <Ionicons name="time-outline" size={24} color={brandColors.white} />
                   <Text style={styles.timeHeaderText}>{time}</Text>
                 </View>
 
@@ -99,7 +113,7 @@ export default function NewUserMedicinesScreen() {
                       <Text style={styles.assignmentMedicine}>{item.medicine}</Text>
                     </View>
                     <TouchableOpacity onPress={() => removeAssignment(time, index)} style={styles.deleteButton}>
-                      <Ionicons name="trash-outline" size={20} color={Colors.brand.error} />
+                      <Ionicons name="trash-outline" size={20} color={brandColors.error} />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -108,7 +122,7 @@ export default function NewUserMedicinesScreen() {
                 <View style={styles.addForm}>
                   <Text style={styles.subLabel}>Select Medicine:</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.medicineSelector}>
-                    {MOCK_MEDICINES.map((med) => {
+                    {availableMedicines.map((med) => {
                       const isSelected = activeMedicine[time] === med;
                       return (
                         <TouchableOpacity
@@ -128,7 +142,7 @@ export default function NewUserMedicinesScreen() {
                     <TextInput
                       style={styles.dosageInput}
                       placeholder="Dosage (e.g., 1)"
-                      placeholderTextColor={Colors.brand.whiteMuted}
+                      placeholderTextColor={brandColors.whiteMuted}
                       value={activeDosage[time] || ''}
                       onChangeText={(val) => {
                         // Only allow numbers
@@ -166,7 +180,7 @@ export default function NewUserMedicinesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (brandColors: any) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -182,29 +196,29 @@ const styles = StyleSheet.create({
   },
   headerLabel: {
     fontSize: 20,
-    color: Colors.brand.whiteMuted,
+    color: brandColors.whiteMuted,
     marginBottom: 20,
   },
   timeBlock: {
-    backgroundColor: Colors.brand.glassBackground,
+    backgroundColor: brandColors.glassBackground,
     borderRadius: 16,
     padding: 15,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: Colors.brand.border,
+    borderColor: brandColors.border,
   },
   timeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.brand.border,
+    borderBottomColor: brandColors.border,
     paddingBottom: 10,
   },
   timeHeaderText: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: Colors.brand.white,
+    color: brandColors.white,
     marginLeft: 10,
   },
   assignmentRow: {
@@ -221,14 +235,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   assignmentDosage: {
-    color: Colors.brand.success,
+    color: brandColors.success,
     fontWeight: 'bold',
     fontSize: 16,
     marginRight: 10,
     minWidth: 50,
   },
   assignmentMedicine: {
-    color: Colors.brand.white,
+    color: brandColors.white,
     fontSize: 16,
   },
   deleteButton: {
@@ -241,7 +255,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.1)',
   },
   subLabel: {
-    color: Colors.brand.whiteMuted,
+    color: brandColors.whiteMuted,
     marginBottom: 10,
     fontSize: 14,
   },
@@ -259,15 +273,15 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   medicineChipActive: {
-    backgroundColor: Colors.brand.white,
-    borderColor: Colors.brand.white,
+    backgroundColor: brandColors.white,
+    borderColor: brandColors.white,
   },
   medicineChipText: {
-    color: Colors.brand.white,
+    color: brandColors.white,
     fontWeight: '600',
   },
   medicineChipTextActive: {
-    color: Colors.brand.gradientEnd,
+    color: brandColors.gradientEnd,
   },
   dosageRow: {
     flexDirection: 'row',
@@ -280,12 +294,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.1)',
     borderRadius: 10,
     padding: 12,
-    color: Colors.brand.white,
+    color: brandColors.white,
     fontSize: 16,
     marginRight: 10,
   },
   addButton: {
-    backgroundColor: Colors.brand.success,
+    backgroundColor: brandColors.success,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
@@ -297,7 +311,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
   addButtonText: {
-    color: Colors.brand.white,
+    color: brandColors.white,
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -306,13 +320,13 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 0 : 20,
   },
   completeButton: {
-    backgroundColor: Colors.brand.white,
+    backgroundColor: brandColors.white,
     padding: 18,
     borderRadius: 30,
     alignItems: 'center',
   },
   completeButtonText: {
-    color: Colors.brand.gradientEnd,
+    color: brandColors.gradientEnd,
     fontSize: 18,
     fontWeight: 'bold',
   },

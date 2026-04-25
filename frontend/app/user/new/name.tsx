@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import TopBar from '../../../components/TopBar';
-import { Colors } from '../../../constants/theme';
-import { GlobalStyles } from '../../../constants/GlobalStyles';
+import { useGlobalStyles } from '../../../constants/GlobalStyles';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function NewUserNameScreen() {
   const router = useRouter();
   const [name, setName] = useState('');
+  const { brandColors } = useTheme();
+  const globalStyles = useGlobalStyles();
+  const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
   const handleNext = () => {
     if (name.trim()) {
@@ -21,7 +24,7 @@ export default function NewUserNameScreen() {
 
   return (
     <LinearGradient
-      colors={[Colors.brand.gradientStart, Colors.brand.gradientMiddle, Colors.brand.gradientEnd]}
+      colors={[brandColors.gradientStart, brandColors.gradientMiddle, brandColors.gradientEnd]}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -37,7 +40,7 @@ export default function NewUserNameScreen() {
             <TextInput
               style={styles.input}
               placeholder="e.g. John Doe"
-              placeholderTextColor={Colors.brand.whiteMuted}
+              placeholderTextColor={brandColors.whiteMuted}
               value={name}
               onChangeText={setName}
               autoFocus
@@ -60,7 +63,7 @@ export default function NewUserNameScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (brandColors: any) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -77,21 +80,21 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 24,
-    color: Colors.brand.white,
+    color: brandColors.white,
     fontWeight: 'bold',
     marginBottom: 20,
   },
   input: {
-    backgroundColor: Colors.brand.glassBackground,
+    backgroundColor: brandColors.glassBackground,
     borderWidth: 1,
-    borderColor: Colors.brand.border,
+    borderColor: brandColors.border,
     borderRadius: 15,
     padding: 18,
-    color: Colors.brand.white,
+    color: brandColors.white,
     fontSize: 18,
   },
   nextButton: {
-    backgroundColor: Colors.brand.white,
+    backgroundColor: brandColors.white,
     padding: 18,
     borderRadius: 30,
     alignItems: 'center',
@@ -101,7 +104,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   nextButtonText: {
-    color: Colors.brand.gradientEnd,
+    color: brandColors.gradientEnd,
     fontSize: 18,
     fontWeight: 'bold',
   },

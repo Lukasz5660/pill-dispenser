@@ -1,29 +1,36 @@
 import React from 'react';
-import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, Text } from 'react-native';
+import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, Text, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { Link } from 'expo-router';
 
 import UserTile from '../components/UserTile';
 import MedicinesTile from '../components/MedicinesTile';
 import DeviceTile from '../components/DeviceTile';
-import { Colors } from '../constants/theme';
-import { GlobalStyles } from '../constants/GlobalStyles';
+import { useGlobalStyles } from '../constants/GlobalStyles';
+import { useTheme } from '../context/ThemeContext';
 
 export default function App() {
+  const { brandColors, theme } = useTheme();
+  const globalStyles = useGlobalStyles();
+
   return (
     <LinearGradient
-      // Linear Gradient from dark grey to medium grey
-      colors={[Colors.brand.gradientStart, Colors.brand.gradientMiddle, Colors.brand.gradientEnd]}
+      colors={[brandColors.gradientStart, brandColors.gradientMiddle, brandColors.gradientEnd]}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} />
         
-        <View style={[GlobalStyles.rowSpaceBetween, styles.topBar]}>
-          <Text style={styles.appName}>AKESO</Text>
-          <Ionicons name="person-circle-outline" size={36} color={Colors.brand.white} />
+        <View style={[globalStyles.rowSpaceBetween, styles.topBar]}>
+          <Text style={[styles.appName, { color: brandColors.white }]}>AKESO</Text>
+          <Link href="/account" asChild>
+            <TouchableOpacity>
+              <Ionicons name="person-circle-outline" size={36} color={brandColors.white} />
+            </TouchableOpacity>
+          </Link>
         </View>
 
         <ScrollView 
@@ -56,7 +63,6 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: Colors.brand.white,
     letterSpacing: 3,
   },
   scrollContent: {

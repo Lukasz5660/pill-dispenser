@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, TouchableOpacity, Text, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import Tile from '../../components/Tile';
 import TopBar from '../../components/TopBar';
-import { Colors } from '../../constants/theme';
-import { GlobalStyles } from '../../constants/GlobalStyles';
+import { useGlobalStyles } from '../../constants/GlobalStyles';
+import { useTheme } from '../../context/ThemeContext';
 
 const staticMedicines = [
   { id: '1', name: 'Aspirin', chamber: 1, remaining: 80 },
@@ -15,9 +15,13 @@ const staticMedicines = [
 ];
 
 export default function ManageMedicines() {
+  const { brandColors } = useTheme();
+  const globalStyles = useGlobalStyles();
+  const styles = useMemo(() => getStyles(brandColors), [brandColors]);
+
   return (
     <LinearGradient
-      colors={[Colors.brand.gradientStart, Colors.brand.gradientMiddle, Colors.brand.gradientEnd]}
+      colors={[brandColors.gradientStart, brandColors.gradientMiddle, brandColors.gradientEnd]}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -36,18 +40,18 @@ export default function ManageMedicines() {
             {/* Current Medicines Section */}
             <Tile>
               <View style={styles.sectionHeader}>
-                <Text style={GlobalStyles.titleText}>Current Inventory</Text>
+                <Text style={globalStyles.titleText}>Current Inventory</Text>
                 <Text style={styles.sectionSubtitle}>Tap trash to delete (mockup)</Text>
               </View>
 
               {staticMedicines.map((med) => (
                 <View key={med.id} style={styles.medicineRow}>
                   <View style={styles.medicineDetails}>
-                    <Text style={GlobalStyles.bodyText}>{med.name}</Text>
-                    <Text style={GlobalStyles.secondaryText}>Chamber {med.chamber} • {med.remaining}% left</Text>
+                    <Text style={globalStyles.bodyText}>{med.name}</Text>
+                    <Text style={globalStyles.secondaryText}>Chamber {med.chamber} • {med.remaining}% left</Text>
                   </View>
                   <TouchableOpacity style={styles.deleteButton}>
-                    <Ionicons name="trash-outline" size={24} color="#ff6b6b" />
+                    <Ionicons name="trash-outline" size={24} color={brandColors.error} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -56,7 +60,7 @@ export default function ManageMedicines() {
             {/* Add New Medicine Section */}
             <Tile>
               <View style={styles.sectionHeader}>
-                <Text style={GlobalStyles.titleText}>Add New Medicine</Text>
+                <Text style={globalStyles.titleText}>Add New Medicine</Text>
               </View>
 
               <View style={styles.formGroup}>
@@ -64,7 +68,7 @@ export default function ManageMedicines() {
                 <TextInput
                   style={styles.input}
                   placeholder="e.g. Paracetamol"
-                  placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                  placeholderTextColor={brandColors.whiteMuted}
                   editable={false}
                 />
               </View>
@@ -74,14 +78,14 @@ export default function ManageMedicines() {
                 <TextInput
                   style={styles.input}
                   placeholder="e.g. 4"
-                  placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                  placeholderTextColor={brandColors.whiteMuted}
                   keyboardType="numeric"
                   editable={false}
                 />
               </View>
 
               <TouchableOpacity style={styles.addButton}>
-                <Ionicons name="add-circle-outline" size={20} color="#ffffff" style={{ marginRight: 8 }} />
+                <Ionicons name="add-circle-outline" size={20} color={brandColors.white} style={{ marginRight: 8 }} />
                 <Text style={styles.addButtonText}>Add Medicine</Text>
               </TouchableOpacity>
             </Tile>
@@ -93,7 +97,7 @@ export default function ManageMedicines() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (brandColors: any) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -115,17 +119,17 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.brand.white,
+    color: brandColors.white,
   },
   sectionHeader: {
     marginBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.brand.border,
+    borderBottomColor: brandColors.border,
     paddingBottom: 10,
   },
   sectionSubtitle: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: brandColors.whiteMuted,
     marginTop: 4,
   },
   medicineRow: {
@@ -147,7 +151,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   label: {
-    color: Colors.brand.white,
+    color: brandColors.white,
     fontSize: 14,
     marginBottom: 8,
     marginLeft: 4,
@@ -156,12 +160,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
     borderRadius: 10,
     padding: 12,
-    color: '#ffffff',
+    color: brandColors.white,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   addButton: {
-    backgroundColor: Colors.brand.success,
+    backgroundColor: brandColors.success,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -170,7 +174,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   addButtonText: {
-    color: Colors.brand.white,
+    color: brandColors.white,
     fontSize: 16,
     fontWeight: '600',
   },

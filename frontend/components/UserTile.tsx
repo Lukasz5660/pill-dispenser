@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import Tile from './Tile';
-import { GlobalStyles } from '../constants/GlobalStyles';
-import { Colors } from '../constants/theme';
+import { useGlobalStyles } from '../constants/GlobalStyles';
+import { useTheme } from '../context/ThemeContext';
 
 const mockUsers = [
   { id: '1', name: 'Mom (Active)', initial: 'M', isActive: true },
@@ -13,20 +13,21 @@ const mockUsers = [
 
 export default function UserTile() {
   const router = useRouter();
+  const { brandColors } = useTheme();
+  const globalStyles = useGlobalStyles();
+  const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
   return (
     <Tile>
-      <View style={GlobalStyles.tileHeader}>
-        <Text style={GlobalStyles.titleText}>Users</Text>
+      <View style={globalStyles.tileHeader}>
+        <Text style={globalStyles.titleText}>Users</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.content}>
         {mockUsers.map((user) => (
           <TouchableOpacity
             key={user.id}
             onPress={() => router.push(`/user/${user.id}` as any)}
-            style={[
-              styles.userAvatar,
-            ]}
+            style={styles.userAvatar}
           >
             <Text style={styles.userInitial}>{user.initial}</Text>
           </TouchableOpacity>
@@ -42,7 +43,7 @@ export default function UserTile() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (brandColors: any) => StyleSheet.create({
   content: {
     marginTop: 5,
     flexDirection: 'row',
@@ -51,24 +52,24 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: Colors.brand.border,
+    backgroundColor: brandColors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
   },
   userInitial: {
-    color: Colors.brand.white,
+    color: brandColors.white,
     fontSize: 20,
     fontWeight: 'bold',
   },
   addUserAvatar: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: Colors.brand.whiteHalf,
+    borderColor: brandColors.whiteHalf,
     borderStyle: 'dashed',
   },
   addUserText: {
-    color: Colors.brand.whiteMuted,
+    color: brandColors.whiteMuted,
     fontSize: 24,
   },
 });
