@@ -5,13 +5,7 @@ import Tile from './Tile';
 import { useGlobalStyles } from '../constants/GlobalStyles';
 import { useTheme } from '../context/ThemeContext';
 
-const mockUsers = [
-  { id: '1', name: 'Mom (Active)', initial: 'M', isActive: true },
-  { id: '2', name: 'Dad', initial: 'D', isActive: false },
-  { id: '3', name: 'Grandma', initial: 'G', isActive: false },
-];
-
-export default function UserTile() {
+export default function UserTile({ users = [] }: { users?: any[] }) {
   const router = useRouter();
   const { brandColors } = useTheme();
   const globalStyles = useGlobalStyles();
@@ -23,7 +17,7 @@ export default function UserTile() {
         <Text style={globalStyles.titleText}>Users</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.content}>
-        {mockUsers.map((user) => (
+        {users.map((user) => (
           <TouchableOpacity
             key={user.id}
             onPress={() => router.push(`/user/${user.id}` as any)}

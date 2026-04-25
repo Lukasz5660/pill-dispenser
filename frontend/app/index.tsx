@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
@@ -13,6 +13,38 @@ import { useTheme } from '../context/ThemeContext';
 export default function App() {
   const { brandColors, theme } = useTheme();
   const globalStyles = useGlobalStyles();
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/dashboard/1');
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading || !dashboardData) {
+    return (
+      <LinearGradient
+        colors={[brandColors.gradientStart, brandColors.gradientMiddle, brandColors.gradientEnd]}
+        style={[styles.container, styles.centerContent]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <ActivityIndicator size="large" color={brandColors.white} />
+        <Text style={{color: brandColors.white, marginTop: 10}}>Loading dashboard...</Text>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient
@@ -38,9 +70,9 @@ export default function App() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.content}>
-            <UserTile />
-            <MedicinesTile />
-            <DeviceTile />
+            <UserTile users={dashboardData.users} />
+            <MedicinesTile medicines={dashboardData.medicines} />
+            <DeviceTile device={dashboardData.device} />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -51,6 +83,10 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   safeArea: {
     flex: 1,

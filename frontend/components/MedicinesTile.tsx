@@ -6,13 +6,7 @@ import Tile from './Tile';
 import { useGlobalStyles } from '../constants/GlobalStyles';
 import { useTheme } from '../context/ThemeContext';
 
-const mockMedicines = [
-  { id: '1', name: 'Aspirin', remaining: 80 },
-  { id: '2', name: 'Vitamin C', remaining: 40 },
-  { id: '3', name: 'Ibuprofen', remaining: 10 },
-];
-
-export default function MedicinesTile() {
+export default function MedicinesTile({ medicines = [] }: { medicines?: any[] }) {
   const router = useRouter();
   const { brandColors } = useTheme();
   const globalStyles = useGlobalStyles();
@@ -29,23 +23,24 @@ export default function MedicinesTile() {
           <Ionicons name="chevron-forward" size={20} color={brandColors.whiteHalf} />
         </View>
         <View style={styles.content}>
-          {mockMedicines.map((med) => {
-            // Determine progress bar color based on remaining percentage
+          {medicines.map((med) => {
+            // Determine progress bar color based on remaining stock (assuming max capacity of 100)
+            const remainingPercentage = Math.min(100, Math.max(0, med.remaining));
             const barColor =
-              med.remaining > 50 ? brandColors.success : med.remaining > 20 ? brandColors.warning : brandColors.error;
+              remainingPercentage > 50 ? brandColors.success : remainingPercentage > 20 ? brandColors.warning : brandColors.error;
 
             return (
               <View key={med.id} style={styles.medicineContainer}>
                 <View style={[globalStyles.rowSpaceBetween, styles.medicineInfo]}>
                   <Text style={globalStyles.bodyText}>{med.name}</Text>
-                  <Text style={globalStyles.secondaryText}>{med.remaining}%</Text>
+                  <Text style={globalStyles.secondaryText}>{Math.round(remainingPercentage)}%</Text>
                 </View>
                 <View style={styles.progressBarBackground}>
                   <View
                     style={[
                       styles.progressBarFill,
                       {
-                        width: `${med.remaining}%`,
+                        width: `${remainingPercentage}%`,
                         backgroundColor: barColor,
                       },
                     ]}

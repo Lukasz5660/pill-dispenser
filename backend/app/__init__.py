@@ -1,12 +1,18 @@
 from flask import Flask
+from flask_cors import CORS
 from sqlalchemy import text
 from app.models import db
 import os
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+    CORS(app)
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///:memory:')
     db.init_app(app)
+    
+    from app.routes.dashboard import dashboard_bp
+    app.register_blueprint(dashboard_bp)
+    
     with app.app_context():
         db.drop_all()
         db.create_all()
