@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, TIMESTAMP, Time, Date, ForeignKey, UniqueConstraint, Index, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from datetime import datetime, time, date
+from datetime import datetime, time as dt_time, date
 from typing import List, Optional
 
 db = SQLAlchemy()
@@ -87,7 +87,7 @@ class DispenseTime(db.Model):
 
     dispense_time_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"), nullable=False)
-    time: Mapped[time] = mapped_column(Time, nullable=False)
+    time: Mapped[dt_time] = mapped_column(Time, nullable=False)
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="dispense_times")
