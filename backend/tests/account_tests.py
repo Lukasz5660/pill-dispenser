@@ -5,7 +5,8 @@ from tests.test_session import db_session
 import pytest
 
 
-def compare_contents(db_query_result: list, expected_result: list):
+
+def compare_accounts_contents(db_query_result: list, expected_result: list):
     for i in range(len(expected_result)):
         account_name, password_hash, email = expected_result[i]
         assert ((db_query_result[i].account_name == account_name) and 
@@ -17,7 +18,7 @@ def compare_contents(db_query_result: list, expected_result: list):
 def test_accounts_content(db_session: Session):
     current_accounts_content = db_session.query(Account).all()
     expected_accounts_content = [('John Doe', 'pbkdf2:sha256:600000$hashedpasswordstring', 'john.doe@example.com')]
-    compare_contents(current_accounts_content, expected_accounts_content)
+    compare_accounts_contents(current_accounts_content, expected_accounts_content)
 
 
 
@@ -32,7 +33,7 @@ def test_accounts_insert_account(db_session: Session):
     expected_accounts_content = [('John Doe', 'pbkdf2:sha256:600000$hashedpasswordstring', 'john.doe@example.com'),
                                ('Wojciech Fiedoruk', 'pbkdf2:sha256:600001$hashedpasswordstring', 'wojciech.fiedoruk@example.com')]
 
-    compare_contents(current_accounts_content, expected_accounts_content)
+    compare_accounts_contents(current_accounts_content, expected_accounts_content)
 
 
 
@@ -45,11 +46,11 @@ def test_accounts_delete_account(db_session: Session):
 
     db_session.delete(account)
     db_session.commit()
-    current_accounts_content = db_session.query(Account).all()
 
+    current_accounts_content = db_session.query(Account).all()
     expected_accounts_content = [('John Doe', 'pbkdf2:sha256:600000$hashedpasswordstring', 'john.doe@example.com')]
 
-    compare_contents(current_accounts_content, expected_accounts_content)
+    compare_accounts_contents(current_accounts_content, expected_accounts_content)
 
 
 
@@ -64,7 +65,7 @@ def test_accounts_update_account(db_session: Session):
     current_accounts_content = db_session.query(Account).all()
     expected_accounts_content = [('Kamil Troszczyński', 'pbf2:sha256:600000$hashedpasordsing', 'troszczkamil@o2.com')]
 
-    compare_contents(current_accounts_content, expected_accounts_content)
+    compare_accounts_contents(current_accounts_content, expected_accounts_content)
     
 
 
@@ -87,7 +88,7 @@ def test_accounts_repeated_emails(db_session: Session):
     current_accounts_content = db_session.query(Account).all()
     expected_accounts_content = [('Kamil Troszczyński', 'pbf2:sha256:600000$hashedpasordsing', 'troszczkamil@o2.com')]
 
-    compare_contents(current_accounts_content, expected_accounts_content)
+    compare_accounts_contents(current_accounts_content, expected_accounts_content)
 
 
 
@@ -109,7 +110,7 @@ def test_accounts_null_data(db_session: Session):
     current_accounts_content = db_session.query(Account).all()
     expected_accounts_content = [('Kamil Troszczyński', 'pbf2:sha256:600000$hashedpasordsing', 'troszczkamil@o2.com')]
 
-    compare_contents(current_accounts_content, expected_accounts_content)
+    compare_accounts_contents(current_accounts_content, expected_accounts_content)
 
 
 
@@ -136,7 +137,7 @@ def test_accounts_order_records(db_session: Session):
                                  ('Kamil Troszczyński', 'pbf2:sha256:600000$hashedpasordsing', 'troszczkamil@o2.com'),
                                  ('Wojciech Fiedoruk', 'pbkdf2:sha226:600001$hashedpasswordstring', 'wojciech.fiedoruk@examples.com')]
     
-    compare_contents(accounts_ordered_by_name, expected_accounts_content)
+    compare_accounts_contents(accounts_ordered_by_name, expected_accounts_content)
     
 
 
@@ -162,4 +163,4 @@ def test_accounts_filtered_by_name(db_session: Session):
     expected_accounts_content = [('Wojciech Fiedoruk', 'pbkdf2:sha226:600001$hashedpasswordstring', 'wojciech.fiedoruk@examples.com'),
                                  ('Jan Kowalski', 'pbkdf1:sha156:600001$hashedpasswordstring', 'jan.kowalski@examples.com')]
     
-    compare_contents(accounts_filtered_by_name, expected_accounts_content)
+    compare_accounts_contents(accounts_filtered_by_name, expected_accounts_content)
