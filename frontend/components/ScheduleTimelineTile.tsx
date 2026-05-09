@@ -4,27 +4,35 @@ import Tile from './Tile';
 import { useTheme } from '../context/ThemeContext';
 
 interface ScheduleTimelineTileProps {
-  scheduledHours: number[]; // e.g., [9, 14, 20]
+  scheduledTimes: string[]; // e.g., ["9:00", "14:30", "20:00"]
 }
 
-export default function ScheduleTimelineTile({ scheduledHours }: ScheduleTimelineTileProps) {
+export default function ScheduleTimelineTile({ scheduledTimes }: ScheduleTimelineTileProps) {
   const { brandColors } = useTheme();
   const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
-  const minHour = scheduledHours.length > 0 ? Math.min(...scheduledHours) : 12;
-  const maxHour = scheduledHours.length > 0 ? Math.max(...scheduledHours) : 12;
+  const timeToFraction = (timeStr: string) => {
+    const [h, m] = timeStr.split(':').map(Number);
+    return h + (m || 0) / 60;
+  };
+
+  const fractionalHours = scheduledTimes.map(timeToFraction);
+
+  const minHour = fractionalHours.length > 0 ? Math.floor(Math.min(...fractionalHours)) : 12;
+  const maxHour = fractionalHours.length > 0 ? Math.ceil(Math.max(...fractionalHours)) : 12;
 
   const startHour = Math.max(0, minHour - 3);
   const endHour = Math.min(24, maxHour + 3);
   const span = Math.max(1, endHour - startHour);
 
   const renderDots = () => {
-    return scheduledHours.map((hour) => {
-      const leftPosition = `${((hour - startHour) / span) * 100}%`;
+    return scheduledTimes.map((timeStr) => {
+      const hourFrac = timeToFraction(timeStr);
+      const leftPosition = `${((hourFrac - startHour) / span) * 100}%`;
       return (
-        <View key={hour} style={[styles.dotContainer, { left: leftPosition as any }]}>
+        <View key={timeStr} style={[styles.dotContainer, { left: leftPosition as any }]}>
           <View style={styles.dot} />
-          <Text style={styles.timeLabel}>{`${hour}:00`}</Text>
+          <Text style={styles.timeLabel}>{timeStr}</Text>
         </View>
       );
     });

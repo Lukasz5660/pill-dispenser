@@ -11,7 +11,11 @@ def create_app():
     db.init_app(app)
     
     from app.routes.dashboard import dashboard_bp
+    from app.routes.users import users_bp
+    from app.routes.medicines import medicines_bp
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(users_bp)
+    app.register_blueprint(medicines_bp)
     
     with app.app_context():
         db.drop_all()

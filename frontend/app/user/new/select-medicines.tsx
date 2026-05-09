@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,8 +8,12 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import TopBar from '../../../components/TopBar';
 import { useGlobalStyles } from '../../../constants/GlobalStyles';
 import { useTheme } from '../../../context/ThemeContext';
+import { API_BASE_URL, ACCOUNT_ID } from '../../../constants/config';
 
-const PREDEFINED_MEDICINES = ['Aspirin', 'Vitamin C', 'Ibuprofen', 'Paracetamol'];
+type AvailableMedicine = {
+  id: string;
+  name: string;
+};
 
 type SelectedMedicine = {
   name: string;
@@ -20,21 +24,31 @@ export default function NewUserSelectMedicinesScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ name: string; times: string }>();
   
-  const [selectedMedicines, setSelectedMedicines] = useState<Record<string, string>>({});
+  const [availableMedicines, setAvailableMedicines] = useState<AvailableMedicine[]>([]);
+  const [selectedMedicines, setSelectedMedicines] = useState<Record<string, { name: string, endDate: string }>>({});
   
   const [showPicker, setShowPicker] = useState(false);
   const [pickerDate, setPickerDate] = useState(new Date());
-  const [activeMedicineForDate, setActiveMedicineForDate] = useState<string | null>(null);
+  const [activeMedicineForDate, setActiveMedicineForDate] = useState<AvailableMedicine | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/medicines?account_id=${ACCOUNT_ID}`)
+      .then(res => res.json())
+      .then(data => {
+        setAvailableMedicines(data);
+      })
+      .catch(err => console.error('Failed to fetch medicines:', err));
+  }, []);
 
   const { brandColors } = useTheme();
   const globalStyles = useGlobalStyles();
   const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
-  const handleToggleMedicine = (med: string) => {
-    if (selectedMedicines[med]) {
+  const handleToggleMedicine = (med: AvailableMedicine) => {
+    if (selectedMedicines[med.id]) {
       // Remove it
       const newSelected = { ...selectedMedicines };
-      delete newSelected[med];
+      delete newSelected[med.id];
       setSelectedMedicines(newSelected);
     } else {
       // Add it and prompt for date
@@ -44,9 +58,9 @@ export default function NewUserSelectMedicinesScreen() {
     }
   };
 
-  const handleChangeDate = (med: string) => {
+  const handleChangeDate = (med: AvailableMedicine) => {
     setActiveMedicineForDate(med);
-    const currDateStr = selectedMedicines[med];
+    const currDateStr = selectedMedicines[med.id]?.endDate;
     setPickerDate(currDateStr ? new Date(currDateStr) : new Date());
     setShowPicker(true);
   };
@@ -82,16 +96,20 @@ export default function NewUserSelectMedicinesScreen() {
 
     setSelectedMedicines(prev => ({
       ...prev,
-      [activeMedicineForDate]: formattedDate
+      [activeMedicineForDate.id]: {
+        name: activeMedicineForDate.name,
+        endDate: formattedDate
+      }
     }));
     setActiveMedicineForDate(null);
   };
 
   const handleComplete = () => {
-    // Only pass the names of the selected medicines for now, or the objects.
-    const selectedList = Object.keys(selectedMedicines).map(name => ({
-      name,
-      endDate: selectedMedicines[name]
+    // Pass the list of selected medicines
+    const selectedList = Object.keys(selectedMedicines).map(id => ({
+      id,
+      name: selectedMedicines[id].name,
+      endDate: selectedMedicines[id].endDate
     }));
 
     router.push({
@@ -118,8 +136,8 @@ export default function NewUserSelectMedicinesScreen() {
           <Text style={styles.label}>Which medicines are you taking?</Text>
 
           <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false}>
-            {PREDEFINED_MEDICINES.map((med, index) => {
-              const isSelected = !!selectedMedicines[med];
+            {availableMedicines.map((med, index) => {
+              const isSelected = !!selectedMedicines[med.id];
               return (
                 <View key={index} style={[styles.medicineRow, isSelected && styles.medicineRowActive]}>
                   <TouchableOpacity 
@@ -132,7 +150,7 @@ export default function NewUserSelectMedicinesScreen() {
                       color={isSelected ? brandColors.success : brandColors.whiteMuted} 
                     />
                     <Text style={[styles.medicineText, isSelected && styles.medicineTextActive]}>
-                      {med}
+                      {med.name}
                     </Text>
                   </TouchableOpacity>
                   
@@ -142,7 +160,7 @@ export default function NewUserSelectMedicinesScreen() {
                       onPress={() => handleChangeDate(med)}
                     >
                       <Text style={styles.dateLabel}>End Date:</Text>
-                      <Text style={styles.dateValue}>{selectedMedicines[med]}</Text>
+                      <Text style={styles.dateValue}>{selectedMedicines[med.id]?.endDate}</Text>
                       <Ionicons name="calendar-outline" size={18} color={brandColors.gradientEnd} style={{marginLeft: 4}} />
                     </TouchableOpacity>
                   )}

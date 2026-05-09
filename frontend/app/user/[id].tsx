@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, Text } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, Text, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -7,40 +7,48 @@ import ScheduleTimelineTile from '../../components/ScheduleTimelineTile';
 import ScheduleListTile from '../../components/ScheduleListTile';
 import TopBar from '../../components/TopBar';
 import { useTheme } from '../../context/ThemeContext';
-
-// Mock data referencing the user's specific schedule
-const mockScheduleData = [
-  {
-    time: '9:00',
-    hour: 9,
-    medications: [
-      { amount: '2x', name: 'Ibuprofen' },
-      { amount: '1x', name: 'Aspirin' },
-    ],
-  },
-  {
-    time: '14:00',
-    hour: 14,
-    medications: [
-      { amount: '1x', name: 'Vitamin C' },
-    ],
-  },
-  {
-    time: '20:00',
-    hour: 20,
-    medications: [
-      { amount: '1x', name: 'Melatonin' },
-    ],
-  },
-];
+import { API_BASE_URL } from '../../constants/config';
 
 export default function UserSchedule() {
   const { id } = useLocalSearchParams();
   const { brandColors } = useTheme();
   const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
-  // Extract just the hours for the visual timeline plot
-  const scheduledHours = mockScheduleData.map(data => data.hour);
+  const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/${id}`);
+        const data = await response.json();
+        setUserData(data);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchUserData();
+    }
+  }, [id]);
+
+  if (loading || !userData) {
+    return (
+      <LinearGradient
+        colors={[brandColors.gradientStart, brandColors.gradientMiddle, brandColors.gradientEnd]}
+        style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <ActivityIndicator size="large" color={brandColors.white} />
+      </LinearGradient>
+    );
+  }
+
+  const scheduledTimes = userData.schedule.map((data: any) => data.time);
 
   return (
     <LinearGradient
@@ -52,7 +60,7 @@ export default function UserSchedule() {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" />
         
-        <TopBar title={`User ${id}`} />
+        <TopBar title={userData.user.name} />
 
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
@@ -60,8 +68,8 @@ export default function UserSchedule() {
         >
           <View style={styles.content}>
 
-            <ScheduleTimelineTile scheduledHours={scheduledHours} />
-            <ScheduleListTile scheduleData={mockScheduleData} />
+            <ScheduleTimelineTile scheduledTimes={scheduledTimes} />
+            <ScheduleListTile scheduleData={userData.schedule} />
           </View>
         </ScrollView>
       </SafeAreaView>

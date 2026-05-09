@@ -13,7 +13,6 @@ class DeviceModel(db.Model):
     model_name: Mapped[str] = mapped_column(String(50), nullable=False)
     chamber_number: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    # Relationships
     devices: Mapped[List["Device"]] = relationship(back_populates="model")
 
 class Account(db.Model):
@@ -24,7 +23,6 @@ class Account(db.Model):
     password_hash: Mapped[str] = mapped_column(String(256), nullable=False)
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
 
-    # Relationships
     devices: Mapped[List["Device"]] = relationship(back_populates="account")
     users: Mapped[List["User"]] = relationship(back_populates="account")
     medications: Mapped[List["Medication"]] = relationship(back_populates="account")
@@ -39,7 +37,6 @@ class Device(db.Model):
     last_heartbeat: Mapped[Optional[datetime]] = mapped_column(DateTime, default=datetime.utcnow)
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.account_id"), nullable=False)
 
-    # Relationships
     model: Mapped["DeviceModel"] = relationship(back_populates="devices")
     account: Mapped["Account"] = relationship(back_populates="devices")
     chambers: Mapped[List["Chamber"]] = relationship(back_populates="device")
@@ -51,7 +48,6 @@ class User(db.Model):
     username: Mapped[str] = mapped_column(String(50), nullable=False)
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.account_id"), nullable=False)
 
-    # Relationships
     account: Mapped["Account"] = relationship(back_populates="users")
     schedules: Mapped[List["Schedule"]] = relationship(back_populates="user")
     dispense_times: Mapped[List["DispenseTime"]] = relationship(back_populates="user")
@@ -63,7 +59,6 @@ class Medication(db.Model):
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.account_id"), nullable=False)
     med_name: Mapped[str] = mapped_column(String(100), nullable=False)
 
-    # Relationships
     account: Mapped["Account"] = relationship(back_populates="medications")
     schedules: Mapped[List["Schedule"]] = relationship(back_populates="medication")
     chambers: Mapped[List["MedicationChamber"]] = relationship(back_populates="medication")
@@ -77,7 +72,6 @@ class Schedule(db.Model):
     start_time: Mapped[date] = mapped_column(Date, nullable=False)
     end_time: Mapped[date] = mapped_column(Date, nullable=False)
 
-    # Relationships
     user: Mapped["User"] = relationship(back_populates="schedules")
     medication: Mapped["Medication"] = relationship(back_populates="schedules")
     dts_entries: Mapped[List["DispenseTimeSchedule"]] = relationship(back_populates="schedule")
@@ -89,7 +83,6 @@ class DispenseTime(db.Model):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"), nullable=False)
     time: Mapped[time] = mapped_column(Time, nullable=False)
 
-    # Relationships
     user: Mapped["User"] = relationship(back_populates="dispense_times")
     dts_entries: Mapped[List["DispenseTimeSchedule"]] = relationship(back_populates="dispense_time")
     notification_logs: Mapped[List["NotificationLog"]] = relationship(back_populates="dispense_time")
@@ -102,7 +95,6 @@ class DispenseTimeSchedule(db.Model):
     dispense_time_id: Mapped[int] = mapped_column(ForeignKey("dispense_times.dispense_time_id"), nullable=False)
     dosage: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    # Relationships
     schedule: Mapped["Schedule"] = relationship(back_populates="dts_entries")
     dispense_time: Mapped["DispenseTime"] = relationship(back_populates="dts_entries")
     dispense_logs: Mapped[List["DispenseLog"]] = relationship(back_populates="dts")
@@ -114,7 +106,6 @@ class Chamber(db.Model):
     device_id: Mapped[int] = mapped_column(ForeignKey("devices.device_id"), nullable=False)
     chamber_number: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    # Relationships
     device: Mapped["Device"] = relationship(back_populates="chambers")
     medication_links: Mapped[List["MedicationChamber"]] = relationship(back_populates="chamber")
 
@@ -126,7 +117,6 @@ class MedicationChamber(db.Model):
     medication_id: Mapped[int] = mapped_column(ForeignKey("medications.medication_id"), nullable=False)
     stock: Mapped[int] = mapped_column(Integer, default=0)
 
-    # Relationships
     chamber: Mapped["Chamber"] = relationship(back_populates="medication_links")
     medication: Mapped["Medication"] = relationship(back_populates="chambers")
 
@@ -138,7 +128,6 @@ class NotificationToken(db.Model):
     token: Mapped[str] = mapped_column(String(256), nullable=False)
     device_name: Mapped[Optional[str]] = mapped_column(String(50))
 
-    # Relationships
     account: Mapped["Account"] = relationship(back_populates="notification_tokens")
 
 class NotificationLog(db.Model):
@@ -149,7 +138,6 @@ class NotificationLog(db.Model):
     actual_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     status: Mapped[Optional[str]] = mapped_column(String(20))
 
-    # Relationships
     dispense_time: Mapped["DispenseTime"] = relationship(back_populates="notification_logs")
 
 class DispenseLog(db.Model):
@@ -160,5 +148,4 @@ class DispenseLog(db.Model):
     actual_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     status: Mapped[Optional[str]] = mapped_column(String(20))
 
-    # Relationships
     dts: Mapped["DispenseTimeSchedule"] = relationship(back_populates="dispense_logs")

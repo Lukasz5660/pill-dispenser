@@ -1,17 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL, ACCOUNT_ID } from '../../../constants/config';
 
 import TopBar from '../../../components/TopBar';
 import { useGlobalStyles } from '../../../constants/GlobalStyles';
 import { useTheme } from '../../../context/ThemeContext';
 
-const MOCK_MEDICINES = ['Aspirin', 'Vitamin C', 'Ibuprofen', 'Paracetamol', 'Melatonin'];
+type SelectedMedicine = {
+  id: string;
+  name: string;
+  endDate: string;
+};
 
 type Assignment = {
-  medicine: string;
+  id: string;
+  name: string;
   dosage: number;
 };
 
@@ -20,10 +26,11 @@ export default function NewUserMedicinesScreen() {
   const params = useLocalSearchParams<{ name: string; times: string; selectedMedicines?: string }>();
   
   const [timesArray, setTimesArray] = useState<string[]>([]);
-  const [availableMedicines, setAvailableMedicines] = useState<string[]>(MOCK_MEDICINES);
+  const [availableMedicines, setAvailableMedicines] = useState<SelectedMedicine[]>([]);
   const [assignments, setAssignments] = useState<Record<string, Assignment[]>>({});
-  const [activeMedicine, setActiveMedicine] = useState<Record<string, string>>({});
+  const [activeMedicine, setActiveMedicine] = useState<Record<string, string>>({}); // stores id
   const [activeDosage, setActiveDosage] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const { brandColors } = useTheme();
   const globalStyles = useGlobalStyles();
@@ -42,7 +49,7 @@ export default function NewUserMedicinesScreen() {
     if (params.selectedMedicines) {
       try {
         const parsed = JSON.parse(params.selectedMedicines);
-        setAvailableMedicines(parsed.map((item: any) => item.name));
+        setAvailableMedicines(parsed);
       } catch (e) {
         console.error("Failed to parse selectedMedicines", e);
       }
@@ -50,15 +57,18 @@ export default function NewUserMedicinesScreen() {
   }, [params.times, params.selectedMedicines]);
 
   const handleAddAssignment = (time: string) => {
-    const med = activeMedicine[time];
+    const medId = activeMedicine[time];
     const doseStr = activeDosage[time] || '';
     const doseInt = parseInt(doseStr, 10);
     
-    if (med && !isNaN(doseInt) && doseInt > 0) {
+    if (medId && !isNaN(doseInt) && doseInt > 0) {
+      const med = availableMedicines.find(m => m.id === medId);
+      if (!med) return;
+
       const currentList = assignments[time] || [];
       setAssignments({
         ...assignments,
-        [time]: [...currentList, { medicine: med, dosage: doseInt }]
+        [time]: [...currentList, { id: medId, name: med.name, dosage: doseInt }]
       });
       // Reset inputs for this time
       setActiveMedicine({ ...activeMedicine, [time]: '' });
@@ -76,9 +86,36 @@ export default function NewUserMedicinesScreen() {
     });
   };
 
-  const handleComplete = () => {
-    // In a real app we'd save this data along with the name and times
-    router.replace('/');
+  const handleComplete = async () => {
+    setIsLoading(true);
+    
+    const payload = {
+      name: params.name || 'User',
+      account_id: parseInt(ACCOUNT_ID, 10),
+      medications: availableMedicines,
+      assignments: assignments
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to create user');
+      }
+      
+      router.replace('/');
+    } catch (e) {
+      console.error(e);
+      // You could show an alert here
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -110,7 +147,7 @@ export default function NewUserMedicinesScreen() {
                   <View key={index} style={styles.assignmentRow}>
                     <View style={styles.assignmentInfo}>
                       <Text style={styles.assignmentDosage}>{item.dosage}</Text>
-                      <Text style={styles.assignmentMedicine}>{item.medicine}</Text>
+                      <Text style={styles.assignmentMedicine}>{item.name}</Text>
                     </View>
                     <TouchableOpacity onPress={() => removeAssignment(time, index)} style={styles.deleteButton}>
                       <Ionicons name="trash-outline" size={20} color={brandColors.error} />
@@ -123,15 +160,15 @@ export default function NewUserMedicinesScreen() {
                   <Text style={styles.subLabel}>Select Medicine:</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.medicineSelector}>
                     {availableMedicines.map((med) => {
-                      const isSelected = activeMedicine[time] === med;
+                      const isSelected = activeMedicine[time] === med.id;
                       return (
                         <TouchableOpacity
-                          key={med}
+                          key={med.id}
                           style={[styles.medicineChip, isSelected && styles.medicineChipActive]}
-                          onPress={() => setActiveMedicine({ ...activeMedicine, [time]: med })}
+                          onPress={() => setActiveMedicine({ ...activeMedicine, [time]: med.id })}
                         >
                           <Text style={[styles.medicineChipText, isSelected && styles.medicineChipTextActive]}>
-                            {med}
+                            {med.name}
                           </Text>
                         </TouchableOpacity>
                       );
@@ -170,8 +207,16 @@ export default function NewUserMedicinesScreen() {
           </ScrollView>
 
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
-              <Text style={styles.completeButtonText}>Finish Setup</Text>
+            <TouchableOpacity 
+              style={[styles.completeButton, isLoading && styles.completeButtonDisabled]} 
+              onPress={handleComplete}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color={brandColors.gradientEnd} />
+              ) : (
+                <Text style={styles.completeButtonText}>Finish Setup</Text>
+              )}
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>

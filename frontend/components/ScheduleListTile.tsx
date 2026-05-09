@@ -23,7 +23,7 @@ export default function ScheduleListTile({ scheduleData }: ScheduleListTileProps
         <View style={styles.medList}>
           {item.medications.map((med, index) => (
             <View key={index} style={styles.medRow}>
-              <Text style={styles.medAmount}>{med.amount}</Text>
+              <Text style={styles.medAmount}>{med.amount}x</Text>
               <Text style={styles.medName}>{med.name}</Text>
             </View>
           ))}

@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 
 import UserTile from '../components/UserTile';
 import MedicinesTile from '../components/MedicinesTile';
 import DeviceTile from '../components/DeviceTile';
 import { useGlobalStyles } from '../constants/GlobalStyles';
 import { useTheme } from '../context/ThemeContext';
+import { API_BASE_URL, ACCOUNT_ID } from '../constants/config';
 
 export default function App() {
   const { brandColors, theme } = useTheme();
@@ -16,21 +17,23 @@ export default function App() {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:8000/api/dashboard/1');
-        const data = await response.json();
-        setDashboardData(data);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  useFocusEffect(
+    useCallback(() => {
+      const fetchDashboardData = async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/dashboard/${ACCOUNT_ID}`);
+          const data = await response.json();
+          setDashboardData(data);
+        } catch (error) {
+          console.error('Error fetching dashboard data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    fetchDashboardData();
-  }, []);
+      fetchDashboardData();
+    }, [])
+  );
 
   if (loading || !dashboardData) {
     return (
@@ -55,7 +58,7 @@ export default function App() {
     >
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} />
-        
+
         <View style={[globalStyles.rowSpaceBetween, styles.topBar]}>
           <Text style={[styles.appName, { color: brandColors.white }]}>AKESO</Text>
           <Link href="/account" asChild>
@@ -65,7 +68,7 @@ export default function App() {
           </Link>
         </View>
 
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
