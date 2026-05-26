@@ -12,13 +12,27 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: always
 
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto_broker
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+    restart: always
+
   backend:
     build: ../backend
     container_name: python_backend
     depends_on:
       - db
+      - mqtt
     environment:
       - DATABASE_URL=postgresql://admin:pudzian@db:5432/pill_dispenser_db
+      - MQTT_BROKER_HOST=mqtt
+      - MQTT_BROKER_PORT=1883
     ports:
       - "8000:8000"
     volumes:
@@ -27,3 +41,4 @@ services:
 
 volumes:
   postgres_data:
+  mosquitto_data:

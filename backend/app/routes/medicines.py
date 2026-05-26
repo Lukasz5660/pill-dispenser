@@ -1,7 +1,14 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from app.models import db, Medication, Chamber, MedicationChamber, Device, DeviceModel
+from app.services.mqtt_service import publish_sync
 
 medicines_bp = Blueprint('medicines', __name__, url_prefix='/api/medicines')
+
+
+def _get_device_id_for_account(account_id: int) -> int | None:
+    device = db.session.scalar(db.select(Device).filter_by(account_id=account_id).limit(1))
+    return device.device_id if device else None
+
 
 @medicines_bp.route('', methods=['GET'])
 def get_medicines():
@@ -76,6 +83,8 @@ def add_medicine():
 
         db.session.commit()
 
+        publish_sync(device.device_id, current_app._get_current_object())
+
         return jsonify({
             'message': 'Medicine added successfully',
             'medicine': {
@@ -96,6 +105,8 @@ def delete_medicine(med_id):
     if not medication:
         return jsonify({'error': 'Medicine not found'}), 404
 
+    account_id = medication.account_id
+
     try:
         for mc in medication.chambers:
             db.session.delete(mc)
@@ -103,8 +114,13 @@ def delete_medicine(med_id):
         db.session.delete(medication)
         db.session.commit()
 
+        device_id = _get_device_id_for_account(account_id)
+        if device_id:
+            publish_sync(device_id, current_app._get_current_object())
+
         return jsonify({'message': 'Medicine deleted successfully'}), 200
 
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+

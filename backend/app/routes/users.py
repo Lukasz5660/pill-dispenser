@@ -1,8 +1,15 @@
-from flask import Blueprint, jsonify, request
-from app.models import db, User, DispenseTime, Schedule, DispenseTimeSchedule, Medication
+from flask import Blueprint, jsonify, request, current_app
+from app.models import db, User, DispenseTime, Schedule, DispenseTimeSchedule, Medication, Device
+from app.services.mqtt_service import publish_sync
 from datetime import datetime, date, timedelta
 
 users_bp = Blueprint('users', __name__, url_prefix='/api/users')
+
+
+def _get_device_id_for_account(account_id: int) -> int | None:
+    device = db.session.scalar(db.select(Device).filter_by(account_id=account_id).limit(1))
+    return device.device_id if device else None
+
 
 @users_bp.route('/<int:user_id>', methods=['GET'])
 def get_user(user_id):
@@ -101,6 +108,11 @@ def add_user():
                     db.session.add(dts)
 
         db.session.commit()
+
+        device_id = _get_device_id_for_account(account_id)
+        if device_id:
+            publish_sync(device_id, current_app._get_current_object())
+
         return jsonify({
             'message': 'User and schedules created successfully',
             'user_id': new_user.user_id
@@ -109,3 +121,4 @@ def add_user():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
