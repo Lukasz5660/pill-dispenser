@@ -6,10 +6,12 @@ import paho.mqtt.client as mqtt
 
 logger = logging.getLogger(__name__)
 _client: mqtt.Client | None = None
+_app = None
 
 
-def init_mqtt() -> mqtt.Client:
-    global _client
+def init_mqtt(app=None) -> mqtt.Client:
+    global _client, _app
+    _app = app
 
     host = os.getenv("MQTT_BROKER_HOST", "localhost")
     port = int(os.getenv("MQTT_BROKER_PORT", 1883))
@@ -17,6 +19,7 @@ def init_mqtt() -> mqtt.Client:
     _client = mqtt.Client(client_id="pill_dispenser_backend", clean_session=True)
     _client.on_connect = _on_connect
     _client.on_disconnect = _on_disconnect
+    _client.on_message = _on_message
 
     try:
         _client.connect(host, port, keepalive=60)
@@ -31,8 +34,61 @@ def init_mqtt() -> mqtt.Client:
 def _on_connect(client, userdata, flags, rc):
     if rc == 0:
         logger.info("MQTT connected (rc=0)")
+        # Subscribe to confirmation topics
+        client.subscribe("pill_dispenser/+/pub_confirmation")
+        
+        global _app
+        if _app is not None:
+            import threading
+            def _publish_all():
+                with _app.app_context():
+                    try:
+                        from app.models import db, Device
+                        devices = db.session.query(Device).all()
+                        for device in devices:
+                            publish_sync(device.device_id, _app, wait=True)
+                    except Exception as e:
+                        logger.error("Failed to publish syncs on connect: %s", e)
+            threading.Thread(target=_publish_all, daemon=True).start()
     else:
         logger.warning("MQTT connect failed with rc=%s", rc)
+
+
+def _on_message(client, userdata, msg):
+    global _app
+    if _app is None:
+        logger.warning("No app context available to process MQTT message")
+        return
+
+    topic = msg.topic
+    if topic.startswith("pill_dispenser/") and topic.endswith("/pub_confirmation"):
+        try:
+            payload_str = msg.payload.decode("utf-8").strip()
+            logger.info("Received confirmation on %s: %s", topic, payload_str)
+
+            dts_ids = []
+            payload = json.loads(payload_str)
+            
+            for med in payload.get("medications", []):
+                for event in med.get("dispense_events", []):
+                    if "dts_id" in event:
+                        dts_ids.append(event["dts_id"])
+
+            if not dts_ids:
+                logger.warning("No dts_id found in confirmation payload on topic %s", topic)
+                return
+
+            with _app.app_context():
+                from app.models import db, DispenseLog
+                for dts_id in dts_ids:
+                    # The presence of the log implies status=TAKEN.
+                    log = DispenseLog(dts_id=dts_id)
+                    db.session.add(log)
+                db.session.commit()
+                logger.info("Saved DispenseLogs for dts_ids: %s", dts_ids)
+
+        except Exception as e:
+            logger.error("Error processing MQTT message on %s: %s", topic, e)
 
 
 def _on_disconnect(client, userdata, rc):
@@ -101,7 +157,7 @@ def _build_payload(device_id: int, app) -> dict:
         }
 
 
-def publish_sync(device_id: int, app) -> None:
+def publish_sync(device_id: int, app, wait: bool = True) -> None:
     """
     Build and publish the schedule payload for a given device.
 
@@ -125,7 +181,8 @@ def publish_sync(device_id: int, app) -> None:
         message = json.dumps(payload, ensure_ascii=False)
 
         result = _client.publish(topic, message, qos=1, retain=True)
-        result.wait_for_publish(timeout=5)
+        if wait:
+            result.wait_for_publish(timeout=5)
         logger.info("MQTT published to %s (mid=%s)", topic, result.mid)
 
     except Exception as exc:

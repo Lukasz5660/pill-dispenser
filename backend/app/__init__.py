@@ -10,8 +10,6 @@ def create_app():
     CORS(app)
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     db.init_app(app)
-    init_mqtt()
-
     from app.routes.dashboard import dashboard_bp
     from app.routes.users import users_bp
     from app.routes.medicines import medicines_bp
@@ -31,4 +29,6 @@ def create_app():
         except Exception as e:
             db.session.rollback()
             print(f"Error seeding database: {e}")
+            
+    init_mqtt(app)
     return app

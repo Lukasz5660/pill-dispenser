@@ -146,6 +146,5 @@ class DispenseLog(db.Model):
     log_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     dts_id: Mapped[int] = mapped_column(ForeignKey("dispense_times_schedules.dts_id"), nullable=False)
     actual_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    status: Mapped[Optional[str]] = mapped_column(String(20))
 
     dts: Mapped["DispenseTimeSchedule"] = relationship(back_populates="dispense_logs")

@@ -1,14 +1,9 @@
 from flask import Blueprint, jsonify, request, current_app
 from app.models import db, Medication, Chamber, MedicationChamber, Device, DeviceModel
 from app.services.mqtt_service import publish_sync
+from app.routes.utils import _get_device_id_for_account
 
 medicines_bp = Blueprint('medicines', __name__, url_prefix='/api/medicines')
-
-
-def _get_device_id_for_account(account_id: int) -> int | None:
-    device = db.session.scalar(db.select(Device).filter_by(account_id=account_id).limit(1))
-    return device.device_id if device else None
-
 
 @medicines_bp.route('', methods=['GET'])
 def get_medicines():

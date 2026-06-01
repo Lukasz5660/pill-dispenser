@@ -2,13 +2,10 @@ from flask import Blueprint, jsonify, request, current_app
 from app.models import db, User, DispenseTime, Schedule, DispenseTimeSchedule, Medication, Device
 from app.services.mqtt_service import publish_sync
 from datetime import datetime, date, timedelta
+from app.routes.utils import _get_device_id_for_account
 
 users_bp = Blueprint('users', __name__, url_prefix='/api/users')
 
-
-def _get_device_id_for_account(account_id: int) -> int | None:
-    device = db.session.scalar(db.select(Device).filter_by(account_id=account_id).limit(1))
-    return device.device_id if device else None
 
 
 @users_bp.route('/<int:user_id>', methods=['GET'])
