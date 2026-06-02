@@ -59,3 +59,12 @@ A QR code will appear in your terminal.
 
 > **Note on connecting to the Local Backend:**
 > If you are running the app on a physical device, navigating to `frontend/app/index.tsx` and changing the `127.0.0.1` inside the `fetch()` call to your computer's local network IP address (e.g., `192.168.1.50`) is required. Emulators will generally work fine with `127.0.0.1` (iOS) or `10.0.2.2` (Android).
+
+---
+
+## 3. Running tests
+Now, tests can be launched with installed pytest with commands
+```bash
+cd backend/tests
+pytest *.py
+```
