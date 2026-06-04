@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models import Account
-from tests.test_session import db_session
+from tests.conftest import db_session
 import pytest
 
 
@@ -16,6 +16,12 @@ def compare_accounts_contents(db_query_result: list, expected_result: list):
 
 
 def test_accounts_content(db_session: Session):
+    account = Account(account_name = 'John Doe', 
+                      password_hash = 'pbkdf2:sha256:600000$hashedpasswordstring', 
+                      email = 'john.doe@example.com')
+    db_session.add(account)
+    db_session.commit()
+
     current_accounts_content = db_session.query(Account).all()
     expected_accounts_content = [('John Doe', 'pbkdf2:sha256:600000$hashedpasswordstring', 'john.doe@example.com')]
     compare_accounts_contents(current_accounts_content, expected_accounts_content)
@@ -23,10 +29,16 @@ def test_accounts_content(db_session: Session):
 
 
 def test_accounts_insert_account(db_session: Session):
-    account = Account(account_name = 'Wojciech Fiedoruk', 
+    account1 = Account(account_name = 'John Doe', 
+                      password_hash = 'pbkdf2:sha256:600000$hashedpasswordstring', 
+                      email = 'john.doe@example.com')
+    db_session.add(account1)
+    db_session.commit()
+
+    account2 = Account(account_name = 'Wojciech Fiedoruk', 
                       password_hash = 'pbkdf2:sha256:600001$hashedpasswordstring', 
                       email = 'wojciech.fiedoruk@example.com')
-    db_session.add(account)
+    db_session.add(account2)
     db_session.commit()
 
     current_accounts_content = db_session.query(Account).all()
@@ -38,13 +50,19 @@ def test_accounts_insert_account(db_session: Session):
 
 
 def test_accounts_delete_account(db_session: Session):
-    account = Account(account_name = 'Wojciech Fiedoruk', 
-                      password_hash = 'pbkdf2:sha256:600001$hashedpasswordstring', 
-                      email = 'wojciech.fiedoruk@example.com')
-    db_session.add(account)
+    account1 = Account(account_name = 'John Doe', 
+                      password_hash = 'pbkdf2:sha256:600000$hashedpasswordstring', 
+                      email = 'john.doe@example.com')
+    db_session.add(account1)
     db_session.commit()
 
-    db_session.delete(account)
+    account2 = Account(account_name = 'Wojciech Fiedoruk', 
+                      password_hash = 'pbkdf2:sha256:600001$hashedpasswordstring', 
+                      email = 'wojciech.fiedoruk@example.com')
+    db_session.add(account2)
+    db_session.commit()
+
+    db_session.delete(account2)
     db_session.commit()
 
     current_accounts_content = db_session.query(Account).all()
@@ -55,6 +73,12 @@ def test_accounts_delete_account(db_session: Session):
 
 
 def test_accounts_update_account(db_session: Session):
+    account1 = Account(account_name = 'John Doe', 
+                      password_hash = 'pbkdf2:sha256:600000$hashedpasswordstring', 
+                      email = 'john.doe@example.com')
+    db_session.add(account1)
+    db_session.commit()
+
     db_session.query(Account).filter(Account.account_id == 1).update(
         {Account.account_name : 'Kamil Troszczyński', 
          Account.password_hash : 'pbf2:sha256:600000$hashedpasordsing', 
@@ -70,6 +94,12 @@ def test_accounts_update_account(db_session: Session):
 
 
 def test_accounts_repeated_emails(db_session: Session):
+    account1 = Account(account_name = 'John Doe', 
+                      password_hash = 'pbkdf2:sha256:600000$hashedpasswordstring', 
+                      email = 'john.doe@example.com')
+    db_session.add(account1)
+    db_session.commit()
+
     db_session.query(Account).filter(Account.account_id == 1).update(
         {Account.account_name : 'Kamil Troszczyński', 
          Account.password_hash : 'pbf2:sha256:600000$hashedpasordsing', 
@@ -77,10 +107,10 @@ def test_accounts_repeated_emails(db_session: Session):
     )
     db_session.commit()
 
-    account = Account(account_name = 'Wojciech Fiedoruk', 
+    account2 = Account(account_name = 'Wojciech Fiedoruk', 
                       password_hash = 'pbkdf2:sha256:600001$hashedpasswordstring', 
                       email = 'troszczkamil@o2.com')
-    db_session.add(account)
+    db_session.add(account2)
     with pytest.raises(IntegrityError):
         db_session.commit()
     
@@ -93,16 +123,22 @@ def test_accounts_repeated_emails(db_session: Session):
 
 
 def test_accounts_null_data(db_session: Session):
+    account1 = Account(account_name = 'John Doe', 
+                      password_hash = 'pbkdf2:sha256:600000$hashedpasswordstring', 
+                      email = 'john.doe@example.com')
+    db_session.add(account1)
+    db_session.commit()
+
     db_session.query(Account).filter(Account.account_id == 1).update(
         {Account.account_name : 'Kamil Troszczyński', 
          Account.password_hash : 'pbf2:sha256:600000$hashedpasordsing', 
          Account.email : 'troszczkamil@o2.com'}
     )
     db_session.commit()
-    account = Account(account_name = None, 
+    account2 = Account(account_name = None, 
                       password_hash = None, 
                       email = None)
-    db_session.add(account)
+    db_session.add(account2)
     with pytest.raises(IntegrityError):
         db_session.commit()
         
@@ -115,6 +151,12 @@ def test_accounts_null_data(db_session: Session):
 
 
 def test_accounts_order_records(db_session: Session):
+    account1 = Account(account_name = 'John Doe', 
+                      password_hash = 'pbkdf2:sha256:600000$hashedpasswordstring', 
+                      email = 'john.doe@example.com')
+    db_session.add(account1)
+    db_session.commit()
+
     db_session.query(Account).filter(Account.account_id == 1).update(
         {Account.account_name : 'Kamil Troszczyński', 
          Account.password_hash : 'pbf2:sha256:600000$hashedpasordsing', 
@@ -122,14 +164,14 @@ def test_accounts_order_records(db_session: Session):
     )
     db_session.commit()
 
-    account1 = Account(account_name = 'Wojciech Fiedoruk', 
+    account2 = Account(account_name = 'Wojciech Fiedoruk', 
                       password_hash = 'pbkdf2:sha226:600001$hashedpasswordstring', 
                       email = 'wojciech.fiedoruk@examples.com')
-    account2 = Account(account_name = 'Jan Kowalski', 
+    account3 = Account(account_name = 'Jan Kowalski', 
                       password_hash = 'pbkdf1:sha156:600001$hashedpasswordstring', 
                       email = 'jan.kowalski@examples.com')
-    db_session.add(account1)
     db_session.add(account2)
+    db_session.add(account3)
     db_session.commit()
 
     accounts_ordered_by_name = db_session.query(Account).order_by(Account.account_name).all()
@@ -142,6 +184,12 @@ def test_accounts_order_records(db_session: Session):
 
 
 def test_accounts_filtered_by_name(db_session: Session):
+    account1 = Account(account_name = 'John Doe', 
+                      password_hash = 'pbkdf2:sha256:600000$hashedpasswordstring', 
+                      email = 'john.doe@example.com')
+    db_session.add(account1)
+    db_session.commit()
+
     db_session.query(Account).filter(Account.account_id == 1).update(
         {Account.account_name : 'Kamil Troszczyński', 
          Account.password_hash : 'pbf2:sha256:600000$hashedpasordsing', 
@@ -149,14 +197,14 @@ def test_accounts_filtered_by_name(db_session: Session):
     )
     db_session.commit()
 
-    account1 = Account(account_name = 'Wojciech Fiedoruk', 
+    account2 = Account(account_name = 'Wojciech Fiedoruk', 
                       password_hash = 'pbkdf2:sha226:600001$hashedpasswordstring', 
                       email = 'wojciech.fiedoruk@examples.com')
-    account2 = Account(account_name = 'Jan Kowalski', 
+    account3 = Account(account_name = 'Jan Kowalski', 
                       password_hash = 'pbkdf1:sha156:600001$hashedpasswordstring', 
                       email = 'jan.kowalski@examples.com')
-    db_session.add(account1)
     db_session.add(account2)
+    db_session.add(account3)
     db_session.commit()
 
     accounts_filtered_by_name = db_session.query(Account).where(Account.account_name.in_(['Wojciech Fiedoruk', 'Jan Kowalski'])).all()

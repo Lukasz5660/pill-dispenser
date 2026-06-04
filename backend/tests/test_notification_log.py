@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models import NotificationLog
-from tests.test_session import db_session
+from tests.conftest import db_session
 import pytest
 from datetime import datetime
 

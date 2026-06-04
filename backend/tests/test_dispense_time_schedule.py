@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models import DispenseTimeSchedule, Schedule, DispenseTime
-from tests.test_session import db_session
+from tests.conftest import db_session
 import pytest
 from datetime import date, time as dt_time
 
