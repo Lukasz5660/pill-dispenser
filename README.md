@@ -67,7 +67,7 @@ A QR code will appear in your terminal.
 docker exec -it postgres_db psql -U admin -d pill_dispenser_db
 ```
 
-## 4. Running tests
+## 4. Running functional and performance tests
 Now, tests can be launched with commands
 ```bash
 cd backend/tests
