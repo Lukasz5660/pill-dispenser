@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { StyleSheet, ScrollView, SafeAreaView, StatusBar, View, Text, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 
 import ScheduleTimelineTile from '../../components/ScheduleTimelineTile';
 import ScheduleListTile from '../../components/ScheduleListTile';
@@ -11,29 +11,32 @@ import { API_BASE_URL } from '../../constants/config';
 
 export default function UserSchedule() {
   const { id } = useLocalSearchParams();
+  const router = useRouter();
   const { brandColors } = useTheme();
   const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/users/${id}`);
-        const data = await response.json();
-        setUserData(data);
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUserData = async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/users/${id}`);
+          const data = await response.json();
+          setUserData(data);
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    if (id) {
-      fetchUserData();
-    }
-  }, [id]);
+      if (id) {
+        fetchUserData();
+      }
+    }, [id])
+  );
 
   if (loading || !userData) {
     return (
@@ -49,6 +52,17 @@ export default function UserSchedule() {
   }
 
   const scheduledTimes = userData.schedule.map((data: any) => data.time);
+
+  const handleEditSchedule = () => {
+    router.push({
+      pathname: '/user/new/schedule',
+      params: {
+        userId: id,
+        name: userData.user.name,
+        editPayload: JSON.stringify(userData.editPayload)
+      }
+    });
+  };
 
   return (
     <LinearGradient
@@ -69,7 +83,7 @@ export default function UserSchedule() {
           <View style={styles.content}>
 
             <ScheduleTimelineTile scheduledTimes={scheduledTimes} />
-            <ScheduleListTile scheduleData={userData.schedule} />
+            <ScheduleListTile scheduleData={userData.schedule} onPress={handleEditSchedule} />
           </View>
         </ScrollView>
       </SafeAreaView>

@@ -24,16 +24,16 @@ def init_mqtt(app=None) -> mqtt.Client:
     try:
         _client.connect(host, port, keepalive=60)
         _client.loop_start() 
-        logger.info("MQTT client connected to %s:%s", host, port)
+        logger.info("MQTT: Connected to %s:%s", host, port)
     except Exception as exc:
-        logger.warning("MQTT broker not reachable at startup (%s) — will retry on publish", exc)
+        logger.warning("MQTT: Broker not reachable at startup (%s) — will retry on publish", exc)
 
     return _client
 
 
 def _on_connect(client, userdata, flags, rc):
     if rc == 0:
-        logger.info("MQTT connected (rc=0)")
+        logger.info("MQTT: Connected (rc=0)")
         # Subscribe to confirmation topics
         client.subscribe("pill_dispenser/+/pub_confirmation")
         
@@ -48,23 +48,23 @@ def _on_connect(client, userdata, flags, rc):
                         for device in devices:
                             publish_sync(device.device_id, _app, wait=True)
                     except Exception as e:
-                        logger.error("Failed to publish syncs on connect: %s", e)
+                        logger.error("MQTT: Failed to publish syncs on connect: %s", e)
             threading.Thread(target=_publish_all, daemon=True).start()
     else:
-        logger.warning("MQTT connect failed with rc=%s", rc)
+        logger.warning("MQTT: Connect failed with rc=%s", rc)
 
 
 def _on_message(client, userdata, msg):
     global _app
     if _app is None:
-        logger.warning("No app context available to process MQTT message")
+        logger.warning("MQTT: No app context available to process message")
         return
 
     topic = msg.topic
     if topic.startswith("pill_dispenser/") and topic.endswith("/pub_confirmation"):
         try:
             payload_str = msg.payload.decode("utf-8").strip()
-            logger.info("Received confirmation on %s: %s", topic, payload_str)
+            logger.info("MQTT: Received confirmation on %s", topic)
 
             dts_ids = []
             payload = json.loads(payload_str)
@@ -75,7 +75,7 @@ def _on_message(client, userdata, msg):
                         dts_ids.append(event["dts_id"])
 
             if not dts_ids:
-                logger.warning("No dts_id found in confirmation payload on topic %s", topic)
+                logger.warning("MQTT: No dts_id found in confirmation payload on topic %s", topic)
                 return
 
             with _app.app_context():
@@ -85,15 +85,15 @@ def _on_message(client, userdata, msg):
                     log = DispenseLog(dts_id=dts_id)
                     db.session.add(log)
                 db.session.commit()
-                logger.info("Saved DispenseLogs for dts_ids: %s", dts_ids)
+                logger.info("MQTT: Saved DispenseLogs for dts_ids: %s", dts_ids)
 
         except Exception as e:
-            logger.error("Error processing MQTT message on %s: %s", topic, e)
+            logger.error("MQTT: Error processing message on %s: %s", topic, e)
 
 
 def _on_disconnect(client, userdata, rc):
     if rc != 0:
-        logger.warning("MQTT unexpected disconnect (rc=%s)", rc)
+        logger.warning("MQTT: Unexpected disconnect (rc=%s)", rc)
 
 
 
@@ -168,13 +168,13 @@ def publish_sync(device_id: int, app, wait: bool = True) -> None:
     global _client
 
     if _client is None:
-        logger.warning("MQTT client not initialised — skipping publish")
+        logger.warning("MQTT: Client not initialised — skipping publish")
         return
 
     try:
         payload = _build_payload(device_id, app)
         if not payload:
-            logger.warning("No payload built for device_id=%s", device_id)
+            logger.warning("MQTT: No payload built for device_id=%s", device_id)
             return
 
         topic = f"pill_dispenser/{device_id}/sync"
@@ -183,7 +183,7 @@ def publish_sync(device_id: int, app, wait: bool = True) -> None:
         result = _client.publish(topic, message, qos=1, retain=True)
         if wait:
             result.wait_for_publish(timeout=5)
-        logger.info("MQTT published to %s (mid=%s)", topic, result.mid)
+        logger.info("MQTT: Published sync to %s (mid=%s)", topic, result.mid)
 
     except Exception as exc:
-        logger.error("Failed to publish MQTT message for device_id=%s: %s", device_id, exc)
+        logger.error("MQTT: Failed to publish message for device_id=%s: %s", device_id, exc)

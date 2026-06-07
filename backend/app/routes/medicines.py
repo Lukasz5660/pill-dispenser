@@ -2,6 +2,9 @@ from flask import Blueprint, jsonify, request, current_app
 from app.models import db, Medication, Chamber, MedicationChamber, Device, DeviceModel
 from app.services.mqtt_service import publish_sync
 from app.routes.utils import _get_device_id_for_account
+import logging
+
+logger = logging.getLogger(__name__)
 
 medicines_bp = Blueprint('medicines', __name__, url_prefix='/api/medicines')
 
@@ -23,6 +26,7 @@ def get_medicines():
             'remaining': chamber_link.stock if chamber_link else 0
         })
 
+    logger.info(f"Medicines: fetched for account {account_id}")
     return jsonify(result)
 
 @medicines_bp.route('', methods=['POST'])
@@ -80,6 +84,7 @@ def add_medicine():
 
         publish_sync(device.device_id, current_app._get_current_object())
 
+        logger.info(f"Medicine: {new_med.medication_id} added to chamber {chamber_number}")
         return jsonify({
             'message': 'Medicine added successfully',
             'medicine': {
@@ -92,6 +97,7 @@ def add_medicine():
 
     except Exception as e:
         db.session.rollback()
+        logger.error(f"Medicine error (add): {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @medicines_bp.route('/<int:med_id>', methods=['DELETE'])
@@ -113,9 +119,11 @@ def delete_medicine(med_id):
         if device_id:
             publish_sync(device_id, current_app._get_current_object())
 
+        logger.info(f"Medicine: {med_id} deleted")
         return jsonify({'message': 'Medicine deleted successfully'}), 200
 
     except Exception as e:
         db.session.rollback()
+        logger.error(f"Medicine error (delete): {str(e)}")
         return jsonify({'error': str(e)}), 500
 

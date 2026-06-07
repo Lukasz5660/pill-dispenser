@@ -4,8 +4,16 @@ from sqlalchemy import text
 from app.models import db
 from app.services.mqtt_service import init_mqtt
 import os
+import sys
+import logging
 
 def create_app():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler(sys.stdout)]
+    )
+    
     app = Flask(__name__)
     CORS(app)
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
@@ -25,10 +33,10 @@ def create_app():
                 sql_script = f.read()
             db.session.execute(text(sql_script))
             db.session.commit()
-            print("Database seeded successfully with raw SQL!")
+            logging.getLogger(__name__).info("DB: Seeded successfully with raw SQL")
         except Exception as e:
             db.session.rollback()
-            print(f"Error seeding database: {e}")
+            logging.getLogger(__name__).error(f"DB: Error seeding database - {e}")
             
     init_mqtt(app)
     return app

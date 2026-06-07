@@ -1,13 +1,15 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Tile from './Tile';
 import { useTheme } from '../context/ThemeContext';
 
 interface ScheduleTimelineTileProps {
   scheduledTimes: string[]; // e.g., ["9:00", "14:30", "20:00"]
+  onPress?: () => void;
 }
 
-export default function ScheduleTimelineTile({ scheduledTimes }: ScheduleTimelineTileProps) {
+export default function ScheduleTimelineTile({ scheduledTimes, onPress }: ScheduleTimelineTileProps) {
   const { brandColors } = useTheme();
   const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
@@ -42,9 +44,10 @@ export default function ScheduleTimelineTile({ scheduledTimes }: ScheduleTimelin
 
   return (
     <Tile>
-      <View style={styles.header}>
+      <TouchableOpacity style={styles.header} onPress={onPress} disabled={!onPress}>
         <Text style={styles.title}>Daily Timeline</Text>
-      </View>
+        {onPress && <Ionicons name="pencil" size={20} color={brandColors.white} />}
+      </TouchableOpacity>
       <View style={styles.timelineWrapper}>
         <View style={styles.bar}>
           {renderDots()}
@@ -61,6 +64,9 @@ export default function ScheduleTimelineTile({ scheduledTimes }: ScheduleTimelin
 
 const getStyles = (brandColors: any) => StyleSheet.create({
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: brandColors.border,
     paddingBottom: 10,

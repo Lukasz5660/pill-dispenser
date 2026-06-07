@@ -23,11 +23,34 @@ type Assignment = {
 
 export default function NewUserMedicinesScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ name: string; times: string; selectedMedicines?: string }>();
+  const params = useLocalSearchParams<{ name: string; times: string; selectedMedicines?: string; userId?: string; editPayload?: string }>();
   
   const [timesArray, setTimesArray] = useState<string[]>([]);
   const [availableMedicines, setAvailableMedicines] = useState<SelectedMedicine[]>([]);
-  const [assignments, setAssignments] = useState<Record<string, Assignment[]>>({});
+  
+  const [assignments, setAssignments] = useState<Record<string, Assignment[]>>(() => {
+    if (params.editPayload) {
+      try {
+        const payload = JSON.parse(params.editPayload);
+        const currentTimes = params.times ? JSON.parse(params.times) : [];
+        const currentMeds = params.selectedMedicines ? JSON.parse(params.selectedMedicines) : [];
+        const validMedIds = new Set(currentMeds.map((m: any) => m.id));
+
+        const savedAssignments = payload.assignments || {};
+        const filteredAssignments: Record<string, Assignment[]> = {};
+        for (const t of currentTimes) {
+          if (savedAssignments[t]) {
+            filteredAssignments[t] = savedAssignments[t].filter((a: any) => validMedIds.has(a.id));
+          }
+        }
+        return filteredAssignments;
+      } catch (e) {
+        console.error("Failed to parse editPayload in medicines", e);
+      }
+    }
+    return {};
+  });
+
   const [activeMedicine, setActiveMedicine] = useState<Record<string, string>>({}); // stores id
   const [activeDosage, setActiveDosage] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -96,9 +119,13 @@ export default function NewUserMedicinesScreen() {
       assignments: assignments
     };
 
+    const isEdit = !!params.userId;
+    const url = isEdit ? `${API_BASE_URL}/users/${params.userId}` : `${API_BASE_URL}/users`;
+    const method = isEdit ? 'PUT' : 'POST';
+
     try {
-      const res = await fetch(`${API_BASE_URL}/users`, {
-        method: 'POST',
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json'
         },
@@ -106,10 +133,18 @@ export default function NewUserMedicinesScreen() {
       });
       
       if (!res.ok) {
-        throw new Error('Failed to create user');
+        throw new Error(`Failed to ${isEdit ? 'update' : 'create'} user`);
       }
       
-      router.replace('/');
+      if (isEdit) {
+        if (router.canDismiss()) {
+          router.dismiss(3);
+        } else {
+          router.replace(`/user/${params.userId}`);
+        }
+      } else {
+        router.dismissAll();
+      }
     } catch (e) {
       console.error(e);
       // You could show an alert here
@@ -126,7 +161,7 @@ export default function NewUserMedicinesScreen() {
       end={{ x: 1, y: 1 }}
     >
       <SafeAreaView style={styles.safeArea}>
-        <TopBar title={"Medicines for " + (params.name || 'User')} />
+        <TopBar title={params.userId ? "Update Assignments" : ("Medicines for " + (params.name || 'User'))} />
         
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

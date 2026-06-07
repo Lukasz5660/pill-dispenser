@@ -22,10 +22,27 @@ type SelectedMedicine = {
 
 export default function NewUserSelectMedicinesScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ name: string; times: string }>();
+  const { name, times, userId, editPayload } = useLocalSearchParams<{ name: string; times: string; userId?: string; editPayload?: string }>();
   
+  const initialSelected = useMemo(() => {
+    if (editPayload) {
+      try {
+        const payload = JSON.parse(editPayload);
+        const meds = payload.medications || [];
+        const initialMap: Record<string, { name: string, endDate: string }> = {};
+        meds.forEach((m: any) => {
+          initialMap[m.id] = { name: m.name, endDate: m.endDate };
+        });
+        return initialMap;
+      } catch (e) {
+        console.error("Failed to parse editPayload in select-medicines", e);
+      }
+    }
+    return {};
+  }, [editPayload]);
+
   const [availableMedicines, setAvailableMedicines] = useState<AvailableMedicine[]>([]);
-  const [selectedMedicines, setSelectedMedicines] = useState<Record<string, { name: string, endDate: string }>>({});
+  const [selectedMedicines, setSelectedMedicines] = useState<Record<string, { name: string, endDate: string }>>(initialSelected);
   
   const [showPicker, setShowPicker] = useState(false);
   const [pickerDate, setPickerDate] = useState(new Date());
@@ -115,9 +132,11 @@ export default function NewUserSelectMedicinesScreen() {
     router.push({
       pathname: '/user/new/medicines',
       params: { 
-        name: params.name || '', 
-        times: params.times || '[]',
-        selectedMedicines: JSON.stringify(selectedList)
+        name: name || '', 
+        times: times || '[]',
+        selectedMedicines: JSON.stringify(selectedList),
+        userId: userId || '',
+        editPayload: editPayload || ''
       }
     });
   };
@@ -130,7 +149,7 @@ export default function NewUserSelectMedicinesScreen() {
       end={{ x: 1, y: 1 }}
     >
       <SafeAreaView style={styles.safeArea}>
-        <TopBar title={"Select Medicines"} />
+        <TopBar title={userId ? `Edit Medicines` : `Select Medicines`} />
         
         <View style={styles.content}>
           <Text style={styles.label}>Which medicines are you taking?</Text>

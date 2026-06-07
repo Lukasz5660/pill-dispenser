@@ -1,5 +1,8 @@
 from flask import Blueprint, jsonify
 from app.models import db, User, Medication, MedicationChamber, Device
+import logging
+
+logger = logging.getLogger(__name__)
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/api/dashboard')
 
@@ -33,6 +36,7 @@ def get_dashboard(account_id):
             'last_heartbeat': device.last_heartbeat.isoformat() + "Z" if device.last_heartbeat else None
         }
 
+    logger.info(f"Dashboard: fetched for account {account_id}")
     return jsonify({
         'users': user_list,
         'medicines': med_list,

@@ -11,9 +11,24 @@ import { useTheme } from '../../../context/ThemeContext';
 
 export default function NewUserScheduleScreen() {
   const router = useRouter();
-  const { name } = useLocalSearchParams<{ name: string }>();
+  const { name, userId, editPayload } = useLocalSearchParams<{ name: string; userId?: string; editPayload?: string }>();
   
-  const [times, setTimes] = useState<string[]>(['08:00', '14:00', '20:00']);
+  const initialTimes = useMemo(() => {
+    if (editPayload) {
+      try {
+        const payload = JSON.parse(editPayload);
+        const assignmentTimes = Object.keys(payload.assignments || {});
+        if (assignmentTimes.length > 0) {
+          return assignmentTimes.sort();
+        }
+      } catch (e) {
+        console.error("Failed to parse editPayload in schedule", e);
+      }
+    }
+    return ['08:00', '14:00', '20:00'];
+  }, [editPayload]);
+
+  const [times, setTimes] = useState<string[]>(initialTimes);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerTime, setPickerTime] = useState(new Date());
 
@@ -61,7 +76,12 @@ export default function NewUserScheduleScreen() {
   const handleComplete = () => {
     router.push({
       pathname: '/user/new/select-medicines',
-      params: { name: name || '', times: JSON.stringify(times) }
+      params: { 
+        name: name || '', 
+        times: JSON.stringify(times),
+        userId: userId || '',
+        editPayload: editPayload || ''
+      }
     });
   };
 
@@ -73,7 +93,7 @@ export default function NewUserScheduleScreen() {
       end={{ x: 1, y: 1 }}
     >
       <SafeAreaView style={styles.safeArea}>
-        <TopBar title={"Schedule for " + (name || 'User')} />
+        <TopBar title={userId ? `Edit Schedule for ${name}` : `Schedule for ${name || 'User'}`} />
         
         <View style={styles.content}>
           <Text style={styles.label}>When should pills be taken?</Text>

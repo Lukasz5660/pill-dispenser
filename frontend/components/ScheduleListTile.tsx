@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Tile from './Tile';
 import { useTheme } from '../context/ThemeContext';
 
@@ -10,9 +11,10 @@ interface ScheduleItem {
 
 interface ScheduleListTileProps {
   scheduleData: ScheduleItem[];
+  onPress?: () => void;
 }
 
-export default function ScheduleListTile({ scheduleData }: ScheduleListTileProps) {
+export default function ScheduleListTile({ scheduleData, onPress }: ScheduleListTileProps) {
   const { brandColors } = useTheme();
   const styles = useMemo(() => getStyles(brandColors), [brandColors]);
 
@@ -34,9 +36,10 @@ export default function ScheduleListTile({ scheduleData }: ScheduleListTileProps
 
   return (
     <Tile>
-      <View style={styles.header}>
+      <TouchableOpacity style={styles.header} onPress={onPress} disabled={!onPress}>
         <Text style={styles.title}>Prescription Routine</Text>
-      </View>
+        {onPress && <Ionicons name="pencil" size={20} color={brandColors.white} />}
+      </TouchableOpacity>
       <FlatList
         data={scheduleData}
         keyExtractor={(item) => item.time}
@@ -50,6 +53,9 @@ export default function ScheduleListTile({ scheduleData }: ScheduleListTileProps
 
 const getStyles = (brandColors: any) => StyleSheet.create({
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: brandColors.border,
     paddingBottom: 10,

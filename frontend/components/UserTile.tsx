@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Link } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import Tile from './Tile';
 import { useGlobalStyles } from '../constants/GlobalStyles';
 import { useTheme } from '../context/ThemeContext';
@@ -13,9 +14,12 @@ export default function UserTile({ users = [] }: { users?: any[] }) {
 
   return (
     <Tile>
-      <View style={globalStyles.tileHeader}>
-        <Text style={globalStyles.titleText}>Users</Text>
-      </View>
+      <Link href="/users" asChild>
+        <TouchableOpacity style={globalStyles.tileHeader}>
+          <Text style={globalStyles.titleText}>Users</Text>
+          <Ionicons name="chevron-forward" size={20} color={brandColors.white} />
+        </TouchableOpacity>
+      </Link>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.content}>
         {users.map((user) => (
           <TouchableOpacity
