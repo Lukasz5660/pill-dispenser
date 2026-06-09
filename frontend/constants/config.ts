@@ -1,4 +1,4 @@
-export const API_IP_ADDRESS = '192.168.18.203';
+export const API_IP_ADDRESS = '192.168.161.76';
 export const API_PORT = '8000';
 export const ACCOUNT_ID = '1';
 

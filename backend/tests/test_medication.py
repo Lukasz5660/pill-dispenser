@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models import Medication
-from tests.test_session import db_session
+from tests.conftest import db_session
 import pytest
 
 
@@ -15,6 +15,14 @@ def compare_medications_contents(db_query_result: list, expected_result: list):
 
 
 def test_medications_content(db_session: Session):
+    medication1 = Medication(account_id = 1, med_name = 'Lisinopril (Blood Pressure)')
+    db_session.add(medication1)
+    db_session.commit()
+
+    medication2 = Medication(account_id = 1, med_name ='Atorvastatin (Cholesterol)')
+    db_session.add(medication2)
+    db_session.commit()
+
     current_medications_content = db_session.query(Medication).all()
     expected_medications_content = [(1, 'Lisinopril (Blood Pressure)'), (1, 'Atorvastatin (Cholesterol)')]
     compare_medications_contents(current_medications_content, expected_medications_content)
@@ -22,9 +30,16 @@ def test_medications_content(db_session: Session):
 
 
 def test_medications_insert_medication(db_session: Session):
-    medication = Medication(account_id = 1, 
-                           med_name = 'Aspirin')
-    db_session.add(medication)
+    medication1 = Medication(account_id = 1, med_name = 'Lisinopril (Blood Pressure)')
+    db_session.add(medication1)
+    db_session.commit()
+
+    medication2 = Medication(account_id = 1, med_name ='Atorvastatin (Cholesterol)')
+    db_session.add(medication2)
+    db_session.commit()
+
+    medication3 = Medication(account_id = 1, med_name = 'Aspirin')
+    db_session.add(medication3)
     db_session.commit()
 
     current_medications_content = db_session.query(Medication).all()
@@ -35,12 +50,19 @@ def test_medications_insert_medication(db_session: Session):
 
 
 def test_medications_delete_medication(db_session: Session):
-    medication = Medication(account_id = 1, 
-                           med_name = 'Aspirin')
-    db_session.add(medication)
+    medication1 = Medication(account_id = 1, med_name = 'Lisinopril (Blood Pressure)')
+    db_session.add(medication1)
     db_session.commit()
 
-    db_session.delete(medication)
+    medication2 = Medication(account_id = 1, med_name ='Atorvastatin (Cholesterol)')
+    db_session.add(medication2)
+    db_session.commit()
+
+    medication3 = Medication(account_id = 1, med_name = 'Aspirin')
+    db_session.add(medication3)
+    db_session.commit()
+
+    db_session.delete(medication3)
     db_session.commit()
 
     current_medications_content = db_session.query(Medication).all()
@@ -51,6 +73,14 @@ def test_medications_delete_medication(db_session: Session):
 
 
 def test_medications_update_medication(db_session: Session):
+    medication1 = Medication(account_id = 1, med_name = 'Lisinopril (Blood Pressure)')
+    db_session.add(medication1)
+    db_session.commit()
+
+    medication2 = Medication(account_id = 1, med_name ='Atorvastatin (Cholesterol)')
+    db_session.add(medication2)
+    db_session.commit()
+
     db_session.query(Medication).filter(Medication.medication_id == 1).update(
         {Medication.med_name : 'Lisinopril Updated'}
     )
@@ -64,10 +94,16 @@ def test_medications_update_medication(db_session: Session):
 
 
 def test_medications_null_data(db_session: Session):
-    medication = Medication(account_id = None, 
-                           med_name = None)
-    
-    db_session.add(medication)
+    medication1 = Medication(account_id = 1, med_name = 'Lisinopril (Blood Pressure)')
+    db_session.add(medication1)
+    db_session.commit()
+
+    medication2 = Medication(account_id = 1, med_name ='Atorvastatin (Cholesterol)')
+    db_session.add(medication2)
+    db_session.commit()
+
+    medication3 = Medication(account_id = None, med_name = None)
+    db_session.add(medication3)
     with pytest.raises(IntegrityError):
         db_session.commit()
         
@@ -80,12 +116,19 @@ def test_medications_null_data(db_session: Session):
 
 
 def test_medications_order_records(db_session: Session):
-    medication1 = Medication(account_id = 1, 
-                            med_name = 'Metformin')
-    medication2 = Medication(account_id = 1, 
-                            med_name = 'Aspirin')
+    medication1 = Medication(account_id = 1, med_name = 'Lisinopril (Blood Pressure)')
     db_session.add(medication1)
+    db_session.commit()
+
+    medication2 = Medication(account_id = 1, med_name ='Atorvastatin (Cholesterol)')
     db_session.add(medication2)
+    db_session.commit()
+
+    medication3 = Medication(account_id = 1, med_name = 'Metformin')
+    medication4 = Medication(account_id = 1, med_name = 'Aspirin')
+
+    db_session.add(medication3)
+    db_session.add(medication4)
     db_session.commit()
 
     medications_ordered_by_name = db_session.query(Medication).order_by(Medication.med_name).all()
@@ -96,12 +139,19 @@ def test_medications_order_records(db_session: Session):
 
 
 def test_medications_filtered_by_name(db_session: Session):
-    medication1 = Medication(account_id = 1, 
-                            med_name = 'Metformin')
-    medication2 = Medication(account_id = 1, 
-                            med_name = 'Aspirin')
+    medication1 = Medication(account_id = 1, med_name = 'Lisinopril (Blood Pressure)')
     db_session.add(medication1)
+    db_session.commit()
+
+    medication2 = Medication(account_id = 1, med_name ='Atorvastatin (Cholesterol)')
     db_session.add(medication2)
+    db_session.commit()
+
+    medication3 = Medication(account_id = 1, med_name = 'Metformin')
+    medication4 = Medication(account_id = 1, med_name = 'Aspirin')
+    
+    db_session.add(medication3)
+    db_session.add(medication4)
     db_session.commit()
 
     medications_filtered_by_name = db_session.query(Medication).where(Medication.med_name.in_(['Metformin', 'Lisinopril (Blood Pressure)'])).all()

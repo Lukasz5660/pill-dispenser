@@ -62,9 +62,14 @@ A QR code will appear in your terminal.
 
 ---
 
-## 3. Running tests
-Now, tests can be launched with installed pytest with commands
+## 3. Get into db
+```bash
+docker exec -it postgres_db psql -U admin -d pill_dispenser_db
+```
+
+## 4. Running functional and performance tests
+Now, tests can be launched with commands
 ```bash
 cd backend/tests
-pytest *.py
+docker exec -it python_backend python -m pytest tests/
 ```
