@@ -11,7 +11,7 @@ The hardware part for the Smart Pill Dispenser project can be found in this
 
 The mobile application (AKESO) provides a comprehensive interface for managing the smart pill dispenser. Its key functionalities include:
 
-![UI](./assets/ui.pdf)
+![UI](./assets/ui.png)
 
 - **Dashboard:** Displays multiple users, an overview of current medication inventory levels across different chambers and real-time device status and model information.
 - **User Timelines & Routines:** Allows viewing a specific user's daily timeline and prescription routine, indicating exactly which medications and dosages need to be taken at specific times.
@@ -29,7 +29,7 @@ The backend communicates with the physical dispensers asynchronously via an MQTT
 ### Database
 The system uses a PostgreSQL database with a structured relational model to manage all data.
 
-![Database Schema](./assets/db.pdf)
+![Database Schema](./assets/db.png)
 
 Key entities include:
 - **Accounts & Users:** For managing multi-user access under a single account.
