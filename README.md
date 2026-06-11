@@ -1,8 +1,46 @@
-# Pill Dispenser
+# Smart Pill Dispenser
 
-This project contains a backend and database for managing pill dispensers, and a mobile frontend application to interact with it.
+## 1. Introduction
 
-## Prerequisites
+This repository contains the backend, database, and mobile frontend application for the Smart Pill Dispenser project. The system is designed to manage users, their medication schedules, and the physical dispensing device.
+
+The hardware part for the Smart Pill Dispenser project can be found in this
+[repo](https://github.com/Kamil-Troszczynski/SmartPillDispenser)
+
+## 2. App
+
+The mobile application (AKESO) provides a comprehensive interface for managing the smart pill dispenser. Its key functionalities include:
+
+![UI](./assets/ui.pdf)
+
+- **Dashboard:** Displays multiple users, an overview of current medication inventory levels across different chambers and real-time device status and model information.
+- **User Timelines & Routines:** Allows viewing a specific user's daily timeline and prescription routine, indicating exactly which medications and dosages need to be taken at specific times.
+- **Inventory Management:** Provides a detailed view of current medication stock per chamber, and allows users to easily add new medicines to specific chambers or delete existing ones.
+
+## 3. Backend
+
+The backend is built to handle API requests from the mobile app and communicate with the physical dispenser device using the MQTT protocol.
+
+### MQTT Communication
+The backend communicates with the physical dispensers asynchronously via an MQTT broker using JSON payloads:
+- **Synchronization (`pill_dispenser/<device_id>/sync`):** The backend publishes schedule updates with Quality of Service (QoS 1) and Retained flags. This payload includes user details, assigned chambers, and specific dispense events (times and dosages). Retaining the message ensures that devices receive the latest schedules immediately upon reconnecting.
+- **Confirmations (`pill_dispenser/+/pub_confirmation`):** The backend subscribes to these topics to listen for successful dispense events from the devices. When a device confirms a medication was taken, the backend parses the `dts_id` and records the event in the database logs.
+
+### Database
+The system uses a PostgreSQL database with a structured relational model to manage all data.
+
+![Database Schema](./assets/db.pdf)
+
+Key entities include:
+- **Accounts & Users:** For managing multi-user access under a single account.
+- **Devices & Chambers:** Tracks the physical dispenser units, their models, and the individual chambers holding the medication.
+- **Medications & Stock:** Maps medications to specific chambers and monitors current stock levels.
+- **Schedules & Dispense Times:** Defines the medication routines (start/end dates) and exact dispensing times for users.
+- **Logs:** Keeps track of actual dispense events (`Dispense_Logs`) and notifications sent (`Notification_Logs`).
+
+## 4. How to run
+
+### Prerequisites
 
 Before you begin, ensure you have the following installed on your machine:
 - **[Docker](https://www.docker.com/products/docker-desktop/)** and **Docker Compose** (for running the backend and database)
@@ -11,9 +49,9 @@ Before you begin, ensure you have the following installed on your machine:
 
 ---
 
-## 1. Running the Backend and Database
+### Running the Backend and Database
 
-The backend API and the PostgreSQL database are containerized using Docker. 
+The backend API and the PostgreSQL database are containerized using Docker.
 
 To start them:
 
@@ -33,7 +71,7 @@ This will build the backend image, start the database, and run the backend API.
 
 ---
 
-## 2. Running the Mobile App (Frontend)
+### Running the Mobile App (Frontend)
 
 The frontend is a React Native mobile application built with Expo.
 
@@ -53,7 +91,7 @@ To run the mobile app:
    npx expo start
    ```
 
-A QR code will appear in your terminal. 
+A QR code will appear in your terminal.
 - **Physical Device:** Scan the QR code using the Expo Go app.
 - **Emulator:** Press `i` to open it in the iOS Simulator, or `a` to open it in the Android Emulator.
 
@@ -62,12 +100,12 @@ A QR code will appear in your terminal.
 
 ---
 
-## 3. Get into db
+### Get into db
 ```bash
 docker exec -it postgres_db psql -U admin -d pill_dispenser_db
 ```
 
-## 4. Running functional and performance tests
+### Running functional and performance tests
 Now, tests can be launched with commands
 ```bash
 cd backend/tests
