@@ -3,6 +3,7 @@ from app.models import db, User, DispenseTime, Schedule, DispenseTimeSchedule, M
 from app.services.mqtt_service import publish_sync
 from datetime import datetime, date, timedelta
 from app.routes.utils import _get_device_id_for_account
+from sqlalchemy import text
 import logging
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,53 @@ def get_user(user_id):
             'assignments': edit_assignments
         }
     })
+
+@users_bp.route('/<int:user_id>/today', methods=['GET'])
+def get_todays_dispenses(user_id):
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    rows = db.session.execute(
+        text("SELECT * FROM get_todays_dispenses(:user_id)"),
+        {"user_id": user_id}
+    ).fetchall()
+
+    result = [
+        {
+            'med_name': row.med_name,
+            'dispense_time': str(row.dispense_time),
+            'dosage': row.dosage
+        }
+        for row in rows
+    ]
+    logger.info(f"User: {user_id} today's dispenses fetched")
+    return jsonify({'dispenses': result})
+
+
+@users_bp.route('/<int:user_id>/schedules/active', methods=['GET'])
+def get_active_schedules(user_id):
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    rows = db.session.execute(
+        text("SELECT * FROM get_active_schedules(:user_id)"),
+        {"user_id": user_id}
+    ).fetchall()
+
+    result = [
+        {
+            'schedule_id': row.schedule_id,
+            'med_name': row.med_name,
+            'start_time': str(row.start_time),
+            'end_time': str(row.end_time)
+        }
+        for row in rows
+    ]
+    logger.info(f"User: {user_id} active schedules fetched")
+    return jsonify({'schedules': result})
+
 
 @users_bp.route('', methods=['GET'])
 def get_users():

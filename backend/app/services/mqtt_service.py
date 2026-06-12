@@ -3,6 +3,7 @@ import os
 import logging
 from datetime import datetime, timezone
 import paho.mqtt.client as mqtt
+from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 _client: mqtt.Client | None = None
@@ -79,13 +80,14 @@ def _on_message(client, userdata, msg):
                 return
 
             with _app.app_context():
-                from app.models import db, DispenseLog
+                from app.models import db
                 for dts_id in dts_ids:
-                    # The presence of the log implies status=TAKEN.
-                    log = DispenseLog(dts_id=dts_id)
-                    db.session.add(log)
+                    db.session.execute(
+                        text("CALL dispense_medication(:dts_id)"),
+                        {"dts_id": dts_id}
+                    )
                 db.session.commit()
-                logger.info("MQTT: Saved DispenseLogs for dts_ids: %s", dts_ids)
+                logger.info("MQTT: Dispensed via procedure for dts_ids: %s", dts_ids)
 
         except Exception as e:
             logger.error("MQTT: Error processing message on %s: %s", topic, e)

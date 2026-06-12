@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, current_app
 from app.models import db, Medication, Chamber, MedicationChamber, Device, DeviceModel
 from app.services.mqtt_service import publish_sync
 from app.routes.utils import _get_device_id_for_account
+from sqlalchemy import text
 import logging
 
 logger = logging.getLogger(__name__)
@@ -99,6 +100,44 @@ def add_medicine():
         db.session.rollback()
         logger.error(f"Medicine error (add): {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@medicines_bp.route('/<int:med_id>/refill', methods=['PATCH'])
+def refill_medicine(med_id):
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No input data provided'}), 400
+
+    amount = data.get('amount')
+    if amount is None:
+        return jsonify({'error': 'amount is required'}), 400
+
+    try:
+        amount = int(amount)
+    except (ValueError, TypeError):
+        return jsonify({'error': 'amount must be an integer'}), 400
+
+    mc = db.session.scalar(db.select(MedicationChamber).filter_by(medication_id=med_id))
+    if not mc:
+        return jsonify({'error': 'No chamber assigned to this medication'}), 404
+
+    try:
+        db.session.execute(
+            text("CALL refill_chamber(:chamber_id, :amount)"),
+            {"chamber_id": mc.chamber_id, "amount": amount}
+        )
+        db.session.commit()
+        db.session.refresh(mc)
+        logger.info(f"Medicine: {med_id} refilled by {amount} in chamber {mc.chamber_id}")
+        return jsonify({
+            'message': f'Chamber refilled by {amount}',
+            'chamber_id': mc.chamber_id,
+            'new_stock': mc.stock
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Medicine error (refill): {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 
 @medicines_bp.route('/<int:med_id>', methods=['DELETE'])
 def delete_medicine(med_id):
