@@ -1,6 +1,6 @@
 from app.models import NotificationLog, DispenseLog, Schedule, DispenseTimeSchedule, DispenseTime
 from datetime import datetime, timedelta, date, time
-from sqlalchemy import func
+from sqlalchemy import func, text
 import random
 
 
@@ -181,3 +181,85 @@ def test_notification_logs_status_and_time_performance(benchmark, db_session):
          .all())
 
     benchmark(run_query)
+
+
+#   Notification without indexing - performance tests
+def test_notification_log_no_index_date_range_performance(benchmark, db_session):
+    base_time = datetime(2026, 1, 1, 8, 0, 0)
+    statuses = ['sent', 'failed', 'pending']
+    records = 100000
+    dispense_time_ids = list(range(1, 8))
+
+    date_from = base_time + timedelta(days = 10)
+    date_to = base_time + timedelta(days = 20)
+
+    fake_dispense_times = [DispenseTime(user_id = 1, time = time(8, 0, 0)) for _ in range(7)]
+    db_session.bulk_save_objects(fake_dispense_times)
+    db_session.commit()
+
+    fake_logs = [
+        NotificationLog(
+            dispense_time_id = random.choice(dispense_time_ids),
+            actual_time = base_time + timedelta(minutes = random.randint(0, 60 * 24 * 30)),
+            status = random.choice(statuses)) for _ in range(records)]
+    db_session.bulk_save_objects(fake_logs)
+    db_session.commit()
+
+    db_session.execute(text("DROP INDEX IF EXISTS ix_notification_logs_actual_time"))
+    db_session.commit()
+
+    def run_query():
+        return (
+            db_session.query(func.count(NotificationLog.not_log_id))
+            .join(DispenseTime)
+            .filter(
+                DispenseTime.dispense_time_id.in_(dispense_time_ids),
+                NotificationLog.actual_time.between(date_from, date_to))
+            .scalar()
+        )
+    benchmark(run_query)
+
+
+#   Notification with indexing - performance tests
+def test_notification_log_with_index_date_range_performance(benchmark, db_session):
+    base_time = datetime(2026, 1, 1, 8, 0, 0)
+    statuses = ['sent', 'failed', 'pending']
+    records = 100000
+    dispense_time_ids = list(range(1, 8))
+
+    date_from = base_time + timedelta(days = 10)
+    date_to = base_time + timedelta(days = 20)
+
+    fake_dispense_times = [DispenseTime(user_id = 1, time = time(8, 0, 0)) for _ in range(7)]
+    db_session.bulk_save_objects(fake_dispense_times)
+    db_session.commit()
+
+    fake_logs = [
+        NotificationLog(
+            dispense_time_id = random.choice(dispense_time_ids),
+            actual_time = base_time + timedelta(
+                minutes = random.randint(0, 60 * 24 * 30)
+            ), status = random.choice(statuses)) for _ in range(records)]
+    db_session.bulk_save_objects(fake_logs)
+    db_session.commit()
+
+    db_session.execute(text(
+        "CREATE INDEX IF NOT EXISTS ix_notification_logs_actual_time "
+        "ON notification_logs (actual_time)"
+    ))
+    db_session.commit()
+
+    def run_query():
+        return (
+            db_session.query(func.count(NotificationLog.not_log_id))
+            .join(DispenseTime)
+            .filter(
+                DispenseTime.dispense_time_id.in_(dispense_time_ids),
+                NotificationLog.actual_time.between(date_from, date_to),
+            )
+            .scalar()
+        )
+    benchmark(run_query)
+
+    db_session.execute(text("DROP INDEX IF EXISTS ix_notification_logs_actual_time"))
+    db_session.commit()
